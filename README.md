@@ -2,30 +2,33 @@
 
 ![Four buttons added to Obsidian's built-in image toolbar](docs/hero.svg)
 
-Copy an image to the clipboard, reveal it in Finder or Explorer, shrink it losslessly, or rename it after the note it sits in — without leaving Obsidian and without the right-click menu.
+Rename an image after its note, shrink it to WebP, reveal it in Finder or Explorer, or copy it to the clipboard — without leaving Obsidian and without the right-click menu.
 
 Unlike other image plugins, this one does not draw a toolbar of its own. It adds its buttons to the **built-in** hover toolbar that Obsidian itself shows in the top-right corner of an embedded image, next to the native zoom and edit buttons:
 
 | Button | What it does |
 | --- | --- |
-| Copy image | Puts the image itself on the system clipboard, so it can be pasted into any other app |
-| Reveal in file explorer | Opens the containing folder and selects the file (Finder on macOS, Explorer on Windows) |
-| Compress losslessly | Rewrites the file smaller without touching a single pixel, and sends the original to the system trash |
 | Rename after this note | Renames the image to match the note it is embedded in, numbering repeats automatically |
+| Convert to WebP | Re-encodes the image as WebP, typically to under a tenth of its size, and sends the original to the system trash |
+| Reveal in file explorer | Opens the containing folder and selects the file (Finder on macOS, Explorer on Windows) |
+| Copy image | Puts the image itself on the system clipboard, so it can be pasted into any other app |
 
 Every action is also a command, so it can be bound to a hotkey and fired while hovering over an image. Labels follow the Obsidian interface language (English and Chinese are included).
 
-## Lossless compression
+## WebP conversion
 
-Lossless here means exactly that: the decoded pixels are bit-for-bit identical before and after. Nothing is re-sampled, re-quantised or re-encoded at a lower quality.
+Conversion runs through the WebP encoder Chromium already ships with, so there is nothing to install and no binary bundled with the plugin. On a 1918×820 PNG screenshot, measured end to end:
 
-- **PNG** — the pixel data is re-deflated at maximum effort, trying several compression strategies and keeping the smallest. Colour-critical chunks (`IHDR`, `PLTE`, `tRNS`, `gAMA`, `cHRM`, `sRGB`, `iCCP`, `sBIT`, `bKGD`, `pHYs`) are preserved; text, timestamp and EXIF chunks are dropped.
-- **JPEG** — EXIF, XMP and IPTC blocks are removed. The compressed scan data is copied across untouched.
-- Other formats are refused rather than guessed at.
+| | Size | Of original |
+| --- | --- | --- |
+| Source PNG | 1301 KB | 100% |
+| WebP, quality 95 | 159 KB | 12% |
+| **WebP, quality 90 (default)** | **109 KB** | **8%** |
+| WebP, quality 85 | 88 KB | 7% |
 
-Expect roughly **8–35% off PNG screenshots** and **close to nothing off JPEG photos**, whose Huffman tables are usually already optimal. When the saving would be under 1 KB or under 1%, the file is left alone and the plugin says so — a rewrite plus a trip to the trash is not worth a handful of bytes.
+This is lossy. Pixels change, and the trade is deliberate: screenshots and diagrams survive quality 90 without visible damage while shedding more than 90% of their weight. Photographs with fine gradients deserve a higher setting. Quality is a slider in the plugin's settings; note that 100 is not worth reaching for, as it lands near 89% of the original size.
 
-The original always goes to the **system trash**, never straight to deletion, so a bad result is one restore away. Animated PNGs are skipped.
+Because the extension changes, every note embedding the image is updated through Obsidian's own rename machinery, so links follow the file. The original always goes to the **system trash**, never straight to deletion. Files that are already WebP are refused rather than re-encoded, which would only shed more detail, and anything that would not actually get smaller is left alone.
 
 ## Renaming
 
@@ -34,7 +37,7 @@ The first image takes the note's own name; later ones get `-1`, `-2` and so on, 
 ## Requirements
 
 - Obsidian 1.13.0 or later (the hover toolbar this plugin extends is built in from that version)
-- Desktop only — the clipboard, file-explorer and compression code uses Node and Electron APIs that do not exist on mobile
+- Desktop only — the clipboard and file-explorer integrations use Electron APIs that do not exist on mobile
 
 ## Installation
 

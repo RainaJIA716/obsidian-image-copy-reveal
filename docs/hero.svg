@@ -50,8 +50,8 @@
     <g stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <g stroke="#8A8580"><use href="#ic-zoom" x="10" y="10"/><use href="#ic-pencil" x="50" y="10"/></g>
       <g stroke="#7A5AF8">
-        <use href="#ic-copy" x="90" y="10"/><use href="#ic-folder" x="130" y="10"/>
-        <use href="#ic-shrink" x="170" y="10"/><use href="#ic-rename" x="210" y="10"/>
+        <use href="#ic-rename" x="90" y="10"/><use href="#ic-shrink" x="130" y="10"/>
+        <use href="#ic-folder" x="170" y="10"/><use href="#ic-copy" x="210" y="10"/>
       </g>
     </g>
   </g>
@@ -72,10 +72,10 @@
         <use href="#ic-pencil" transform="translate(100,20) scale(2)"/>
       </g>
       <g stroke="#7A5AF8">
-        <use href="#ic-copy"   transform="translate(180,20) scale(2)"/>
-        <use href="#ic-folder" transform="translate(260,20) scale(2)"/>
-        <use href="#ic-shrink" transform="translate(340,20) scale(2)"/>
-        <use href="#ic-rename" transform="translate(420,20) scale(2)"/>
+        <use href="#ic-rename" transform="translate(180,20) scale(2)"/>
+        <use href="#ic-shrink" transform="translate(260,20) scale(2)"/>
+        <use href="#ic-folder" transform="translate(340,20) scale(2)"/>
+        <use href="#ic-copy"   transform="translate(420,20) scale(2)"/>
       </g>
     </g>
   </g>
@@ -87,5 +87,5 @@
   <text x="528" y="428" text-anchor="middle" font-size="14" font-weight="600" fill="#7A5AF8">this plugin</text>
 
   <text x="292" y="576" text-anchor="middle" font-size="14" fill="#9A948B">zoom · edit</text>
-  <text x="528" y="576" text-anchor="middle" font-size="14" font-weight="600" fill="#2B2A28">copy · reveal in Finder · compress · rename</text>
+  <text x="528" y="576" text-anchor="middle" font-size="14" font-weight="600" fill="#2B2A28">rename · compress · reveal in Finder · copy</text>
 </svg>

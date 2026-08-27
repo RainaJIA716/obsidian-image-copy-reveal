@@ -1,9 +1,7 @@
 "use strict";
 
-const { Plugin, Notice, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
+const { Plugin, PluginSettingTab, Setting, Notice, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
 const fs = require("fs");
-const zlib = require("zlib");
-const { Buffer } = require("buffer");
 
 const MARK = "imageCopyRevealAdded";
 
@@ -18,12 +16,12 @@ const STRINGS = {
   en: {
     copy: "Copy image",
     reveal: REVEAL_LABEL.en,
-    compress: "Compress losslessly",
+    compress: "Convert to WebP",
     rename: "Rename after this note",
 
     copyCommand: "Copy image under cursor",
     revealCommand: `${REVEAL_LABEL.en}: image under cursor`,
-    compressCommand: "Compress image under cursor losslessly",
+    compressCommand: "Convert image under cursor to WebP",
     renameCommand: "Rename image under cursor after this note",
 
     copied: "Image copied",
@@ -33,10 +31,14 @@ const STRINGS = {
     notInVault: "This only works on images stored in the vault",
     noNote: "Could not tell which note this image belongs to",
 
-    unsupported: "Lossless compression only works on PNG and JPEG",
-    alreadySmall: "Already as small as it gets, left untouched",
+    unsupported: "Only PNG, JPEG and BMP can be converted",
+    alreadyWebp: "Already a WebP, not compressing it again",
+    working: "Converting…",
+    alreadySmall: "WebP would not be smaller, left untouched",
     compressed: (pct, from, to) => `Compressed ${pct}% (${from} → ${to}). Original moved to the trash.`,
-    compressFailed: "Could not compress the image",
+    compressFailed: "Could not convert the image",
+    qualityName: "WebP quality",
+    qualityDesc: "Higher keeps more detail and produces bigger files. 90 is a good starting point for screenshots.",
 
     renameSame: "Already named after this note",
     renamed: (name) => `Renamed to ${name}`,
@@ -45,12 +47,12 @@ const STRINGS = {
   zh: {
     copy: "复制图片",
     reveal: REVEAL_LABEL.zh,
-    compress: "无损压缩",
+    compress: "转为 WebP",
     rename: "重命名为笔记名",
 
     copyCommand: "复制鼠标下的图片",
     revealCommand: `${REVEAL_LABEL.zh}：鼠标下的图片`,
-    compressCommand: "无损压缩鼠标下的图片",
+    compressCommand: "把鼠标下的图片转为 WebP",
     renameCommand: "把鼠标下的图片重命名为笔记名",
 
     copied: "已复制图片",
@@ -60,10 +62,14 @@ const STRINGS = {
     notInVault: "只能处理库内的图片",
     noNote: "无法确定图片所在的笔记",
 
-    unsupported: "无损压缩只支持 PNG 和 JPEG",
-    alreadySmall: "已经是最小体积，未做改动",
+    unsupported: "只支持 PNG、JPEG、BMP 转 WebP",
+    alreadyWebp: "已经是 WebP，不重复有损压缩",
+    working: "正在压缩…",
+    alreadySmall: "转成 WebP 反而更大，未做改动",
     compressed: (pct, from, to) => `已压缩 ${pct}%（${from} → ${to}），原图已移到废纸篓`,
     compressFailed: "压缩失败",
+    qualityName: "WebP 质量",
+    qualityDesc: "越高越清晰，文件也越大。截图建议 90。",
 
     renameSame: "文件名已经和笔记一致",
     renamed: (name) => `已重命名为 ${name}`,
@@ -146,111 +152,26 @@ const joinPath = (dir, name) => (dir && dir !== "/" ? `${dir}/${name}` : name);
 
 /* ── lossless optimisers ─────────────────────────────────────────────── */
 
-let CRC_TABLE = null;
-function crc32(buf) {
-  if (!CRC_TABLE) {
-    CRC_TABLE = new Int32Array(256);
-    for (let n = 0; n < 256; n++) {
-      let c = n;
-      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-      CRC_TABLE[n] = c;
-    }
-  }
-  let c = 0xffffffff;
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
+const WEBP_SOURCES = ["png", "jpg", "jpeg", "bmp"];
 
 // Below this, a rewrite costs more than it saves.
 const MIN_SAVING_BYTES = 1024;
 const MIN_SAVING_RATIO = 0.01;
 
-const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+/** Re-encode through the WebP encoder Chromium already ships with. */
+async function encodeWebp(app, file, quality) {
+  const source = await app.vault.readBinary(file);
+  const bitmap = await createImageBitmap(new Blob([source]));
 
-// Chunks that affect how the pixels are decoded or displayed. Everything else
-// is metadata (text, timestamps, EXIF) and is dropped.
-const PNG_KEEP = new Set(["IHDR", "PLTE", "tRNS", "gAMA", "cHRM", "sRGB", "iCCP", "sBIT", "bKGD", "pHYs"]);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  canvas.getContext("2d").drawImage(bitmap, 0, 0);
+  bitmap.close();
 
-/**
- * Re-deflate the pixel data at maximum effort. The decoded pixels are
- * bit-for-bit identical; only the compression of them changes.
- */
-function optimizePng(input) {
-  if (!input.subarray(0, 8).equals(PNG_SIGNATURE)) return null;
-
-  const kept = [];
-  const idat = [];
-  let offset = 8;
-  let sawEnd = false;
-
-  while (offset + 8 <= input.length) {
-    const length = input.readUInt32BE(offset);
-    const type = input.toString("ascii", offset + 4, offset + 8);
-    const data = input.subarray(offset + 8, offset + 8 + length);
-
-    if (type === "acTL" || type === "fcTL" || type === "fdAT") return null; // animated PNG, leave alone
-    if (type === "IDAT") idat.push(data);
-    else if (type === "IEND") { sawEnd = true; break; }
-    else if (PNG_KEEP.has(type)) kept.push({ type, data });
-
-    offset += 12 + length;
-  }
-  if (!sawEnd || idat.length === 0) return null;
-
-  const raw = zlib.inflateSync(Buffer.concat(idat));
-  let best = null;
-  for (const strategy of [zlib.constants.Z_DEFAULT_STRATEGY, zlib.constants.Z_FILTERED, zlib.constants.Z_RLE]) {
-    const candidate = zlib.deflateSync(raw, { level: 9, memLevel: 9, strategy });
-    if (!best || candidate.length < best.length) best = candidate;
-  }
-
-  const chunk = (type, data) => {
-    const head = Buffer.alloc(8);
-    head.writeUInt32BE(data.length, 0);
-    head.write(type, 4, "ascii");
-    const tail = Buffer.alloc(4);
-    tail.writeUInt32BE(crc32(Buffer.concat([head.subarray(4), data])), 0);
-    return Buffer.concat([head, data, tail]);
-  };
-
-  const parts = [PNG_SIGNATURE];
-  for (const { type, data } of kept) parts.push(chunk(type, data));
-  parts.push(chunk("IDAT", best));
-  parts.push(chunk("IEND", Buffer.alloc(0)));
-  return Buffer.concat(parts);
-}
-
-/**
- * Drop EXIF, XMP and IPTC blocks. The compressed scan data is copied over
- * untouched, so the image itself is unchanged.
- */
-function optimizeJpeg(input) {
-  if (input[0] !== 0xff || input[1] !== 0xd8) return null;
-
-  const parts = [input.subarray(0, 2)];
-  let offset = 2;
-
-  while (offset + 4 <= input.length) {
-    if (input[offset] !== 0xff) return null; // not a segment boundary, give up
-    const marker = input[offset + 1];
-
-    if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
-      parts.push(input.subarray(offset, offset + 2));
-      offset += 2;
-      continue;
-    }
-    if (marker === 0xda) { // start of scan: the rest is entropy-coded data
-      parts.push(input.subarray(offset));
-      return Buffer.concat(parts);
-    }
-
-    const length = input.readUInt16BE(offset + 2);
-    const segment = input.subarray(offset, offset + 2 + length);
-    const isMetadata = marker === 0xe1 || marker === 0xed || marker === 0xfe; // APP1, APP13, comment
-    if (!isMetadata) parts.push(segment);
-    offset += 2 + length;
-  }
-  return null;
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", quality / 100));
+  if (!blob) return null;
+  return { bytes: new Uint8Array(await blob.arrayBuffer()), sourceBytes: new Uint8Array(source) };
 }
 
 /* ── actions ─────────────────────────────────────────────────────────── */
@@ -305,7 +226,7 @@ function revealImage(app, embedEl) {
   }
 }
 
-async function compressImage(app, embedEl) {
+async function compressImage(app, embedEl, settings) {
   const file = resolveFile(app, embedEl);
   if (!file) {
     new Notice(t("notInVault"));
@@ -313,41 +234,58 @@ async function compressImage(app, embedEl) {
   }
 
   const extension = file.extension.toLowerCase();
-  if (!["png", "jpg", "jpeg"].includes(extension)) {
+  if (extension === "webp") {
+    // Re-encoding an already lossy file only throws away more detail.
+    new Notice(t("alreadyWebp"));
+    return;
+  }
+  if (!WEBP_SOURCES.includes(extension)) {
     new Notice(t("unsupported"));
     return;
   }
 
+  const notice = new Notice(t("working"), 0);
   try {
-    const before = Buffer.from(await app.vault.readBinary(file));
-    const after = extension === "png" ? optimizePng(before) : optimizeJpeg(before);
+    const encoded = await encodeWebp(app, file, settings.quality);
+    if (!encoded) {
+      notice.hide();
+      new Notice(t("compressFailed"));
+      return;
+    }
 
-    const saved = after ? before.length - after.length : 0;
-    if (saved < MIN_SAVING_BYTES || saved / before.length < MIN_SAVING_RATIO) {
-      // Rewriting the file and sending the original to the trash is not worth
-      // it for a handful of bytes.
+    const { bytes, sourceBytes } = encoded;
+    const saved = sourceBytes.length - bytes.length;
+    if (saved < MIN_SAVING_BYTES || saved / sourceBytes.length < MIN_SAVING_RATIO) {
+      notice.hide();
       new Notice(t("alreadySmall"));
       return;
     }
 
-    // Write the smaller file next to the original, send the original to the
-    // system trash, then move the new one into its place. The note keeps
-    // pointing at the same name throughout.
     const dir = file.parent?.path ?? "";
-    const targetPath = file.path;
-    const tempPath = joinPath(dir, `${file.basename}.recompressed.${file.extension}`);
+    const sourcePath = file.path;
+    let target = joinPath(dir, `${file.basename}.webp`);
+    let suffix = 0;
+    while (app.vault.getAbstractFileByPath(target)) {
+      suffix += 1;
+      target = joinPath(dir, `${file.basename}-${suffix}.webp`);
+    }
 
-    // A Node Buffer is a window onto a shared pool, so its .buffer is not the
-    // bytes we mean. Copy into an ArrayBuffer of exactly the right size.
-    const bytes = new Uint8Array(after);
-    const temp = await app.vault.createBinary(tempPath, bytes.buffer);
-    await app.vault.trash(file, true);
-    await app.fileManager.renameFile(temp, targetPath);
+    // Rename first, so every note that embeds this image follows the file to
+    // its new extension. The bytes are still the old ones at this point.
+    await app.fileManager.renameFile(file, target);
+    await app.vault.modifyBinary(file, bytes.buffer);
 
-    const percent = Math.round((1 - after.length / before.length) * 100);
-    new Notice(t("compressed")(percent, formatSize(before.length), formatSize(after.length)));
+    // Put the untouched original back under its old name purely so it can go
+    // to the trash looking like itself, rather than as a stray temp file.
+    const original = await app.vault.createBinary(sourcePath, sourceBytes.buffer);
+    await app.vault.trash(original, true);
+
+    notice.hide();
+    const percent = Math.round((saved / sourceBytes.length) * 100);
+    new Notice(t("compressed")(percent, formatSize(sourceBytes.length), formatSize(bytes.length)));
   } catch (error) {
-    console.error("Image Copy & Reveal: compression failed", error);
+    notice.hide();
+    console.error("Image Copy & Reveal: WebP conversion failed", error);
     new Notice(t("compressFailed"));
   }
 }
@@ -394,15 +332,49 @@ async function renameAfterNote(app, embedEl) {
 
 /* ── plugin ──────────────────────────────────────────────────────────── */
 
+const DEFAULT_SETTINGS = { quality: 90 };
+
+// Left to right, following the two buttons Obsidian draws itself.
 const ACTIONS = [
-  { id: "copy-image-under-cursor", icon: "copy", label: "copy", command: "copyCommand", run: copyImage },
-  { id: "reveal-image-under-cursor", icon: "folder-open", label: "reveal", command: "revealCommand", run: revealImage },
-  { id: "compress-image-under-cursor", icon: "shrink", label: "compress", command: "compressCommand", run: compressImage },
-  { id: "rename-image-under-cursor", icon: "text-cursor-input", label: "rename", command: "renameCommand", run: renameAfterNote },
+  { id: "rename-image-under-cursor", icon: "text-cursor-input", label: "rename", command: "renameCommand",
+    run: (plugin, el) => renameAfterNote(plugin.app, el) },
+  { id: "compress-image-under-cursor", icon: "shrink", label: "compress", command: "compressCommand",
+    run: (plugin, el) => compressImage(plugin.app, el, plugin.settings) },
+  { id: "reveal-image-under-cursor", icon: "folder-open", label: "reveal", command: "revealCommand",
+    run: (plugin, el) => revealImage(plugin.app, el) },
+  { id: "copy-image-under-cursor", icon: "copy", label: "copy", command: "copyCommand",
+    run: (plugin, el) => copyImage(plugin.app, el) },
 ];
 
+class ImageCopyRevealSettingTab extends PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display() {
+    this.containerEl.empty();
+    new Setting(this.containerEl)
+      .setName(t("qualityName"))
+      .setDesc(t("qualityDesc"))
+      .addSlider((slider) =>
+        slider
+          .setLimits(50, 100, 1)
+          .setValue(this.plugin.settings.quality)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.quality = value;
+            await this.plugin.saveSettings();
+          })
+      );
+  }
+}
+
 module.exports = class ImageCopyRevealPlugin extends Plugin {
-  onload() {
+  async onload() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.addSettingTab(new ImageCopyRevealSettingTab(this.app, this));
+
     this.app.workspace.onLayoutReady(() => {
       this.decorateAll();
       this.observe();
@@ -415,11 +387,15 @@ module.exports = class ImageCopyRevealPlugin extends Plugin {
         checkCallback: (checking) => {
           const embedEl = this.hoveredEmbed();
           if (!embedEl) return false;
-          if (!checking) action.run(this.app, embedEl);
+          if (!checking) action.run(this, embedEl);
           return true;
         },
       });
     }
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
   }
 
   /** Obsidian builds its toolbar lazily, so watch the workspace for it appearing. */
@@ -455,7 +431,7 @@ module.exports = class ImageCopyRevealPlugin extends Plugin {
     actionsEl.dataset[MARK] = "1";
 
     for (const action of ACTIONS) {
-      this.addButton(actionsEl, action.icon, t(action.label), () => action.run(this.app, embedEl));
+      this.addButton(actionsEl, action.icon, t(action.label), () => action.run(this, embedEl));
     }
   }
 
