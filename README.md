@@ -30,6 +30,14 @@ This is lossy. Pixels change, and the trade is deliberate: screenshots and diagr
 
 Because the extension changes, every note embedding the image is updated through Obsidian's own rename machinery, so links follow the file. The original always goes to the **system trash**, never straight to deletion. Files that are already WebP are refused rather than re-encoded, which would only shed more detail, and anything that would not actually get smaller is left alone.
 
+## What copying puts on the clipboard
+
+The system clipboard carries decoded pixels, not a file's own bytes. A 109 KB WebP therefore arrives at the far end as a full-size bitmap, and no choice of format changes that — copying a compressed JPEG behaves exactly the same way. Compression is worth doing for what it does to the vault on disk and in sync, not for what it does to a paste.
+
+So the copy button offers two things at once where the platform allows it: the bitmap, for anything that takes an image, and on macOS a reference to the file itself, for anything that takes a file — Finder, mail, chat apps — which then receive the compressed original. Whether both can sit on the clipboard together is up to the platform, so the plugin checks afterwards and keeps the bitmap if the file reference displaced it.
+
+WebP cannot be read by Electron's `nativeImage`, so those images are repainted through a canvas to produce the bitmap. PNG and JPEG are handed over directly.
+
 ## Renaming
 
 The first image takes the note's own name; later ones get `-1`, `-2` and so on, and the counter skips over names that are already taken. Links are updated through Obsidian's own rename machinery, so every note that points at the image follows along.

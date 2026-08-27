@@ -2,6 +2,7 @@
 
 const { Plugin, PluginSettingTab, Setting, Notice, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
 const fs = require("fs");
+const { Buffer } = require("buffer");
 
 const MARK = "imageCopyRevealAdded";
 
@@ -176,38 +177,64 @@ async function encodeWebp(app, file, quality) {
 
 /* ── actions ─────────────────────────────────────────────────────────── */
 
-async function copyImage(app, embedEl) {
-  const path = resolvePath(app, embedEl);
-  if (path) {
-    try {
-      const { clipboard, nativeImage } = require("electron");
-      const image = nativeImage.createFromPath(path);
-      if (!image.isEmpty()) {
-        clipboard.writeImage(image);
-        new Notice(t("copied"));
-        return;
-      }
-    } catch (error) {
-      console.error("Image Copy & Reveal: writing to the Electron clipboard failed", error);
-    }
-  }
-
-  // Fallback: repaint the rendered <img> onto a canvas, which only yields PNG.
+/** Repaint the rendered image into PNG bytes, for formats nativeImage cannot read. */
+async function renderToPng(embedEl) {
   const img = embedEl.querySelector("img");
-  if (!img) {
-    new Notice(t("notFound"));
+  if (!img) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  canvas.getContext("2d").drawImage(img, 0, 0);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  return blob ? Buffer.from(await blob.arrayBuffer()) : null;
+}
+
+async function copyImage(app, embedEl) {
+  const { clipboard, nativeImage } = require("electron");
+  const path = resolvePath(app, embedEl);
+
+  // The clipboard carries decoded pixels, never the file's own bytes, so a
+  // compressed source still arrives at the far end as a full-size bitmap.
+  let image = null;
+  if (path) {
+    const fromFile = nativeImage.createFromPath(path);
+    if (!fromFile.isEmpty()) image = fromFile;
+  }
+  if (!image) {
+    // nativeImage reads only PNG and JPEG, so WebP and friends go via canvas.
+    const png = await renderToPng(embedEl);
+    if (png) image = nativeImage.createFromBuffer(png);
+  }
+  if (!image || image.isEmpty()) {
+    new Notice(t("copyFailed"));
     return;
   }
+
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    canvas.getContext("2d").drawImage(img, 0, 0);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    clipboard.writeImage(image);
+
+    // Additionally offer the file itself, so anything that accepts files —
+    // Finder, mail, chat apps — receives the compressed original rather than
+    // a fat bitmap. Whether both flavours can coexist is decided by the
+    // platform, so check afterwards and keep the bitmap if it got clobbered.
+    if (path && Platform.isMacOS) {
+      const before = clipboard.availableFormats();
+      try {
+        clipboard.writeBuffer("public.file-url", Buffer.from(encodeURI("file://" + path), "utf8"));
+        const after = clipboard.availableFormats();
+        const keptImage = after.some((format) => /image|tiff|png/i.test(format));
+        if (!keptImage) {
+          clipboard.writeImage(image);
+          console.debug("Image Copy & Reveal: file flavour replaced the bitmap, kept the bitmap", before);
+        }
+      } catch (error) {
+        clipboard.writeImage(image);
+      }
+    }
+
     new Notice(t("copied"));
   } catch (error) {
-    console.error("Image Copy & Reveal: writing the canvas to the clipboard failed", error);
+    console.error("Image Copy & Reveal: writing to the clipboard failed", error);
     new Notice(t("copyFailed"));
   }
 }
