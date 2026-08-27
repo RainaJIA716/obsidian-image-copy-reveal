@@ -1,5 +1,7 @@
 # Image Copy & Reveal
 
+![Copy image and reveal in Finder buttons added to Obsidian's built-in image toolbar](docs/hero.svg)
+
 Copy an image to the clipboard, or reveal it in Finder or Explorer, without leaving Obsidian and without the right-click menu.
 
 Unlike other image plugins, this one does not draw a toolbar of its own. It adds its two buttons to the **built-in** hover toolbar that Obsidian itself shows in the top-right corner of an embedded image, next to the native zoom and edit buttons:
