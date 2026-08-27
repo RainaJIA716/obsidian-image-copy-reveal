@@ -85,7 +85,7 @@ async function copyImage(app, embedEl) {
         return;
       }
     } catch (error) {
-      console.error("Image Actions: writing to the Electron clipboard failed", error);
+      console.error("Image Copy & Reveal: writing to the Electron clipboard failed", error);
     }
   }
 
@@ -104,7 +104,7 @@ async function copyImage(app, embedEl) {
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
     new Notice(t("copied"));
   } catch (error) {
-    console.error("Image Actions: writing the canvas to the clipboard failed", error);
+    console.error("Image Copy & Reveal: writing the canvas to the clipboard failed", error);
     new Notice(t("copyFailed"));
   }
 }
@@ -118,12 +118,12 @@ function revealImage(app, embedEl) {
   try {
     require("electron").shell.showItemInFolder(path);
   } catch (error) {
-    console.error("Image Actions: showItemInFolder failed", error);
+    console.error("Image Copy & Reveal: showItemInFolder failed", error);
     new Notice(t("revealFailed"));
   }
 }
 
-module.exports = class ImageActionsPlugin extends Plugin {
+module.exports = class ImageCopyRevealPlugin extends Plugin {
   onload() {
     this.app.workspace.onLayoutReady(() => {
       this.decorateAll();

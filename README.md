@@ -1,6 +1,8 @@
-# Image Actions
+# Image Copy & Reveal
 
-Adds two buttons to the hover toolbar that Obsidian shows in the top-right corner of an embedded image:
+Copy an image to the clipboard, or reveal it in Finder or Explorer, without leaving Obsidian and without the right-click menu.
+
+Unlike other image plugins, this one does not draw a toolbar of its own. It adds its two buttons to the **built-in** hover toolbar that Obsidian itself shows in the top-right corner of an embedded image, next to the native zoom and edit buttons:
 
 | Button | What it does |
 | --- | --- |
@@ -18,12 +20,12 @@ Both actions are also available from the command palette, so they can be bound t
 
 ### From the community plugin store
 
-Settings → Community plugins → Browse → search for "Image Actions" → Install → Enable.
+Settings → Community plugins → Browse → search for "Image Copy & Reveal" → Install → Enable.
 
 ### Manual
 
 1. Download `main.js` and `manifest.json` from the [latest release](../../releases/latest).
-2. Put them in `<vault>/.obsidian/plugins/image-actions/`.
+2. Put them in `<vault>/.obsidian/plugins/image-copy-reveal/`.
 3. Reload Obsidian and enable the plugin under Settings → Community plugins.
 
 ## How it works

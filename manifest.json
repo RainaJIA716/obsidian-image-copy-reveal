@@ -1,9 +1,9 @@
 {
-  "id": "image-actions",
-  "name": "Image Actions",
+  "id": "image-copy-reveal",
+  "name": "Image Copy & Reveal",
   "version": "1.0.0",
   "minAppVersion": "1.13.0",
-  "description": "Adds copy image and reveal in file explorer buttons to the hover toolbar on embedded images.",
+  "description": "Copy an image to the clipboard or reveal it in Finder or Explorer, using buttons added to the built-in image toolbar.",
   "author": "RainaJIA716",
   "authorUrl": "https://github.com/RainaJIA716",
   "isDesktopOnly": true
