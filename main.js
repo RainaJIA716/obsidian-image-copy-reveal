@@ -1,7 +1,6 @@
 "use strict";
 
 const { Plugin, PluginSettingTab, Setting, Notice, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
-const fs = require("fs");
 const { Buffer } = require("buffer");
 
 const MARK = "imageCopyRevealAdded";
@@ -134,19 +133,19 @@ function resolveFile(app, embedEl) {
   return null;
 }
 
-/** Absolute path, for the actions that hand a path to the operating system. */
+/**
+ * Absolute path, for the actions that hand a path to the operating system.
+ * The vault is asked first: it already knows the file exists, which is why
+ * nothing here needs to touch the filesystem to check.
+ */
 function resolvePath(app, embedEl) {
-  const img = embedEl.querySelector("img");
-  const fromSrc = pathFromSrc(img?.getAttribute("src") || img?.src);
-  if (fromSrc && fs.existsSync(fromSrc)) return fromSrc;
-
   const file = resolveFile(app, embedEl);
   const adapter = app.vault.adapter;
-  if (file && adapter instanceof FileSystemAdapter) {
-    const full = adapter.getFullPath(file.path);
-    if (fs.existsSync(full)) return full;
-  }
-  return null;
+  if (file && adapter instanceof FileSystemAdapter) return adapter.getFullPath(file.path);
+
+  // Not a vault file — an absolute link, or one pointing outside the vault.
+  const img = embedEl.querySelector("img");
+  return pathFromSrc(img?.getAttribute("src") || img?.src);
 }
 
 const joinPath = (dir, name) => (dir && dir !== "/" ? `${dir}/${name}` : name);
