@@ -29,19 +29,35 @@
   <rect x="56" y="44" width="560" height="9" rx="4.5" fill="#DFD9CE"/>
   <rect x="56" y="65" width="404" height="9" rx="4.5" fill="#E7E2D9"/>
 
-  <rect x="56" y="100" width="600" height="286" rx="10" fill="#EBE8D7" stroke="#DCD6C4" stroke-width="1.5" filter="url(#soft)"/>
+  <rect x="56" y="100" width="600" height="286" rx="10" fill="#F7F3E8" stroke="#E4DCC8" stroke-width="1.5" filter="url(#soft)"/>
 
-  <!-- Stands in for any image. Soft, low-contrast and wordless on purpose:
-       it should read as "a picture" at a glance and never invite a second
-       look, so the toolbar stays the only thing worth reading. -->
+  <!-- Stands in for any image: a hand-drawn scene, warm and wordless, so it
+       reads as "a picture" without asking to be read. Drawn on the left, since
+       the toolbar lives in the top-right corner. -->
   <g clip-path="url(#cardClip)">
-    <rect x="56" y="100" width="600" height="286" fill="url(#sky)"/>
-    <circle cx="172" cy="182" r="27" fill="#E9C82F"/>
-    <path d="M56 322 C 158 252, 248 302, 340 272 C 432 242, 528 292, 656 250 L656 386 L56 386 Z" fill="#EFDCD4"/>
-    <path d="M56 350 C 176 298, 286 340, 404 314 C 522 288, 592 320, 656 302 L656 386 L56 386 Z" fill="#5E9A8E"/>
+    <rect x="56" y="100" width="600" height="286" fill="#F7F3E8"/>
+    <g transform="translate(56,100)" stroke="#20201D" stroke-width="2.2" fill="none"
+       stroke-linecap="round" stroke-linejoin="round">
+
+      <circle cx="70" cy="47" r="17" fill="#D9C6FB"/>
+      <path d="M70 24v-9M86 31l6-6M93 47h9M86 63l6 6M70 70v9M54 63l-6 6M47 47h-9M54 31l-6-6"/>
+
+      <path d="M168 53c-6 0-9-4-7-8 1-4 6-6 9-5 1-8 9-12 15-9 3-8 15-9 19-2 7-3 14 2 13 8
+               5 1 7 5 5 9-2 5-8 7-12 7z"/>
+      <path d="M104 114c-7-1-10-7-7-12 2-4 7-6 11-5 0-10 11-15 18-10 4-9 17-9 21-1
+               8-2 15 4 13 11-1 6-7 9-12 9z"/>
+
+      <path d="M45 181c-9-2-14-10-11-17-6-6-3-16 5-18 0-9 9-14 16-10 5-7 16-6 19 2
+               9-1 15 8 11 15 6 5 4 15-4 17-2 7-11 10-17 6-5 6-14 6-19-1z"/>
+      <path d="M56 179c1 18 1 36 0 54M63 181c-1 16-1 34 0 52M47 233c5-3 8-5 9-8M72 234c-5-3-8-5-9-9"/>
+
+      <path d="M6 240c54-8 124-30 194-37 100-4 180 21 270 41 60 13 90 24 124 33"/>
+    </g>
+    <path d="M184 315c10-6 24-10 38-11 6 0 8 2 6 4-3 3-14 5-22 6-6 1-9 2-12 4-4 2-9 2-10-3z"
+          fill="#CDB8F7"/>
   </g>
 
-  <rect x="56" y="100" width="600" height="286" rx="10" fill="none" stroke="#D5CFBB" stroke-width="1.5"/>
+  <rect x="56" y="100" width="600" height="286" rx="10" fill="none" stroke="#E0D7C2" stroke-width="1.5"/>
 
   <!-- toolbar, actual size, sitting in the image's top-right corner -->
   <g transform="translate(390,116)">
