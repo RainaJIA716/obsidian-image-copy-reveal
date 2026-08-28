@@ -23,25 +23,20 @@
   <rect x="56" y="44" width="560" height="9" rx="4.5" fill="#DFD9CE"/>
   <rect x="56" y="65" width="404" height="9" rx="4.5" fill="#E7E2D9"/>
 
-  <rect x="56" y="100" width="600" height="286" rx="10" fill="#FDFCF9" stroke="#E6E0D6" stroke-width="1.5" filter="url(#soft)"/>
+  <rect x="56" y="100" width="600" height="286" rx="10" fill="#F4F1EA" stroke="#E6E0D6" stroke-width="1.5" filter="url(#soft)"/>
 
-  <g stroke="#2B2A28" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M104 232 h86 v46 h-86 z"/>
-    <path d="M300 178 h104 v44 h-104 z"/>
-    <path d="M300 236 h104 v44 h-104 z"/>
-    <path d="M300 294 h104 v44 h-104 z"/>
-    <path d="M190 246 C 236 230, 262 214, 296 200"/>
-    <path d="M190 256 h104"/>
-    <path d="M190 266 C 236 282, 262 298, 296 312"/>
-    <path d="M404 200 h100"/>
-    <path d="M404 258 h100"/>
-    <path d="M404 316 h100"/>
+  <!-- a plain wireframe placeholder: this stands for any image, and must not
+       look like content of its own -->
+  <g stroke="#DAD4C8" stroke-width="1.5" fill="none">
+    <path d="M56 100 L656 386"/>
+    <path d="M656 100 L56 386"/>
   </g>
-  <g fill="#2B2A28">
-    <path d="M296 194 l10 6 l-10 6 z"/><path d="M294 250 l10 6 l-10 6 z"/><path d="M296 306 l10 6 l-10 6 z"/>
-    <path d="M504 194 l10 6 l-10 6 z"/><path d="M504 252 l10 6 l-10 6 z"/><path d="M504 310 l10 6 l-10 6 z"/>
+  <g transform="translate(320,207) scale(3)" stroke="#BFB8AA" stroke-width="0.8"
+     fill="#F6F3ED" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2.5"/>
+    <circle cx="9.5" cy="9.5" r="1.8" fill="none"/>
+    <path d="M21 15.5 17.9 12.4a2 2 0 0 0-2.83 0L6.5 21" fill="none"/>
   </g>
-  <rect x="516" y="294" width="96" height="44" rx="2" fill="#EFEAFE" stroke="#2B2A28" stroke-width="3"/>
 
   <!-- toolbar, actual size, sitting in the image's top-right corner -->
   <g transform="translate(390,116)">
