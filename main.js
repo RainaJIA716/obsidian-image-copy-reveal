@@ -211,27 +211,11 @@ async function copyImage(app, embedEl) {
   }
 
   try {
+    // Only the bitmap. A file reference would let a paste land as the small
+    // file, but on macOS writing a custom pasteboard type clears the
+    // pasteboard, so the two displace each other — and the bitmap is what
+    // every target understands.
     clipboard.writeImage(image);
-
-    // Additionally offer the file itself, so anything that accepts files —
-    // Finder, mail, chat apps — receives the compressed original rather than
-    // a fat bitmap. Whether both flavours can coexist is decided by the
-    // platform, so check afterwards and keep the bitmap if it got clobbered.
-    if (path && Platform.isMacOS) {
-      const before = clipboard.availableFormats();
-      try {
-        clipboard.writeBuffer("public.file-url", Buffer.from(encodeURI("file://" + path), "utf8"));
-        const after = clipboard.availableFormats();
-        const keptImage = after.some((format) => /image|tiff|png/i.test(format));
-        if (!keptImage) {
-          clipboard.writeImage(image);
-          console.debug("Image Copy & Reveal: file flavour replaced the bitmap, kept the bitmap", before);
-        }
-      } catch (error) {
-        clipboard.writeImage(image);
-      }
-    }
-
     new Notice(t("copied"));
   } catch (error) {
     console.error("Image Copy & Reveal: writing to the clipboard failed", error);
@@ -365,7 +349,7 @@ const DEFAULT_SETTINGS = { quality: 90 };
 const ACTIONS = [
   { id: "rename-image-under-cursor", icon: "text-cursor-input", label: "rename", command: "renameCommand",
     run: (plugin, el) => renameAfterNote(plugin.app, el) },
-  { id: "compress-image-under-cursor", icon: "shrink", label: "compress", command: "compressCommand",
+  { id: "compress-image-under-cursor", icon: "file-archive", label: "compress", command: "compressCommand",
     run: (plugin, el) => compressImage(plugin.app, el, plugin.settings) },
   { id: "reveal-image-under-cursor", icon: "folder-open", label: "reveal", command: "revealCommand",
     run: (plugin, el) => revealImage(plugin.app, el) },

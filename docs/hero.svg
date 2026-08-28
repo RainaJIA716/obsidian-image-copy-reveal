@@ -12,15 +12,15 @@
 
     <clipPath id="cardClip"><rect x="56" y="100" width="600" height="286" rx="10"/></clipPath>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#E6EBEC"/>
-      <stop offset="1" stop-color="#F3EFE6"/>
+      <stop offset="0" stop-color="#EBE8D7"/>
+      <stop offset="1" stop-color="#DFDCC8"/>
     </linearGradient>
 
     <g id="ic-zoom"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4M11 8v6M8 11h6"/></g>
     <g id="ic-pencil"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></g>
     <g id="ic-copy"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></g>
     <g id="ic-folder"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.2 10H20a2 2 0 0 1 1.9 2.5l-1.5 6a2 2 0 0 1-2 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.7.9l.8 1.2a2 2 0 0 0 1.7.9H18a2 2 0 0 1 2 2v2"/></g>
-    <g id="ic-shrink"><path d="m15 15 6 6m-6-6v4.8m0-4.8h4.8"/><path d="M9 19.8V15m0 0H4.2M9 15l-6 6"/><path d="M15 4.2V9m0 0h4.8M15 9l6-6"/><path d="M9 4.2V9m0 0H4.2M9 9 3 3"/></g>
+    <g id="ic-archive"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><polyline points="14 2 14 8 20 8"/><path d="M10 6v1M10 11v1M10 16v1"/><circle cx="10" cy="20" r="2"/></g>
     <g id="ic-rename"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1"/><path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5"/><path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1"/><path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7"/><path d="M9 7v10"/></g>
   </defs>
 
@@ -29,19 +29,19 @@
   <rect x="56" y="44" width="560" height="9" rx="4.5" fill="#DFD9CE"/>
   <rect x="56" y="65" width="404" height="9" rx="4.5" fill="#E7E2D9"/>
 
-  <rect x="56" y="100" width="600" height="286" rx="10" fill="#E6EBEC" stroke="#E6E0D6" stroke-width="1.5" filter="url(#soft)"/>
+  <rect x="56" y="100" width="600" height="286" rx="10" fill="#EBE8D7" stroke="#DCD6C4" stroke-width="1.5" filter="url(#soft)"/>
 
   <!-- Stands in for any image. Soft, low-contrast and wordless on purpose:
        it should read as "a picture" at a glance and never invite a second
        look, so the toolbar stays the only thing worth reading. -->
   <g clip-path="url(#cardClip)">
     <rect x="56" y="100" width="600" height="286" fill="url(#sky)"/>
-    <circle cx="172" cy="182" r="27" fill="#F5EDD9"/>
-    <path d="M56 322 C 158 252, 248 302, 340 272 C 432 242, 528 292, 656 250 L656 386 L56 386 Z" fill="#DEE0D8"/>
-    <path d="M56 350 C 176 298, 286 340, 404 314 C 522 288, 592 320, 656 302 L656 386 L56 386 Z" fill="#CFD2C8"/>
+    <circle cx="172" cy="182" r="27" fill="#E9C82F"/>
+    <path d="M56 322 C 158 252, 248 302, 340 272 C 432 242, 528 292, 656 250 L656 386 L56 386 Z" fill="#EFDCD4"/>
+    <path d="M56 350 C 176 298, 286 340, 404 314 C 522 288, 592 320, 656 302 L656 386 L56 386 Z" fill="#5E9A8E"/>
   </g>
 
-  <rect x="56" y="100" width="600" height="286" rx="10" fill="none" stroke="#E0DAD0" stroke-width="1.5"/>
+  <rect x="56" y="100" width="600" height="286" rx="10" fill="none" stroke="#D5CFBB" stroke-width="1.5"/>
 
   <!-- toolbar, actual size, sitting in the image's top-right corner -->
   <g transform="translate(390,116)">
@@ -50,7 +50,7 @@
     <g stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <g stroke="#8A8580"><use href="#ic-zoom" x="10" y="10"/><use href="#ic-pencil" x="50" y="10"/></g>
       <g stroke="#7A5AF8">
-        <use href="#ic-rename" x="90" y="10"/><use href="#ic-shrink" x="130" y="10"/>
+        <use href="#ic-rename" x="90" y="10"/><use href="#ic-archive" x="130" y="10"/>
         <use href="#ic-folder" x="170" y="10"/><use href="#ic-copy" x="210" y="10"/>
       </g>
     </g>
@@ -73,7 +73,7 @@
       </g>
       <g stroke="#7A5AF8">
         <use href="#ic-rename" transform="translate(180,20) scale(2)"/>
-        <use href="#ic-shrink" transform="translate(260,20) scale(2)"/>
+        <use href="#ic-archive" transform="translate(260,20) scale(2)"/>
         <use href="#ic-folder" transform="translate(340,20) scale(2)"/>
         <use href="#ic-copy"   transform="translate(420,20) scale(2)"/>
       </g>

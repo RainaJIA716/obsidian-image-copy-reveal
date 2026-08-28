@@ -50,7 +50,7 @@ The consequence is only that the clipboard payload has nothing to do with the fi
 
 The clipboard copy is larger than either file on disk, because canvas encodes quickly rather than tightly. This is a buffer that lives until the next copy; it is never stored and never synced, so it costs the vault nothing and costs a paste nothing.
 
-Handing the clipboard a reference to the file instead would make a paste land as the compressed file itself. It is not worth it: on macOS the two cannot coexist — writing a custom pasteboard type clears the pasteboard first — so buying that would mean giving up the bitmap, and with it every target that takes an image but not a file. The plugin writes the bitmap, verifies it survived, and restores it if anything displaced it. When a target genuinely needs the small file, the reveal button puts it in Finder ready to drag.
+Handing the clipboard a reference to the file instead would make a paste land as the compressed file itself. It is not worth it: on macOS the two cannot coexist — writing a custom pasteboard type clears the pasteboard first — so buying that would mean giving up the bitmap, and with it every target that takes an image but not a file. The plugin therefore writes the bitmap and nothing else. When a target genuinely needs the small file, the reveal button puts it in Finder ready to drag.
 
 WebP cannot be read by Electron's `nativeImage`, so those images are repainted through a canvas to produce the bitmap. PNG and JPEG are handed over directly.
 
