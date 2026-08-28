@@ -1,4 +1,4 @@
-# Image Copy & Reveal
+# Image Copy and Reveal
 
 ![Four buttons added to Obsidian's built-in image toolbar](docs/hero.svg)
 
@@ -67,7 +67,7 @@ The first image takes the note's own name; later ones get `-1`, `-2` and so on, 
 
 ### From the community plugin store
 
-Settings → Community plugins → Browse → search for "Image Copy & Reveal" → Install → Enable.
+Settings → Community plugins → Browse → search for "Image Copy and Reveal" → Install → Enable.
 
 ### Manual
 

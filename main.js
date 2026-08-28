@@ -218,7 +218,7 @@ async function copyImage(app, embedEl) {
     clipboard.writeImage(image);
     new Notice(t("copied"));
   } catch (error) {
-    console.error("Image Copy & Reveal: writing to the clipboard failed", error);
+    console.error("Image Copy and Reveal: writing to the clipboard failed", error);
     new Notice(t("copyFailed"));
   }
 }
@@ -232,7 +232,7 @@ function revealImage(app, embedEl) {
   try {
     require("electron").shell.showItemInFolder(path);
   } catch (error) {
-    console.error("Image Copy & Reveal: showItemInFolder failed", error);
+    console.error("Image Copy and Reveal: showItemInFolder failed", error);
     new Notice(t("revealFailed"));
   }
 }
@@ -296,7 +296,7 @@ async function compressImage(app, embedEl, settings) {
     new Notice(t("compressed")(percent, formatSize(sourceBytes.length), formatSize(bytes.length)));
   } catch (error) {
     notice.hide();
-    console.error("Image Copy & Reveal: WebP conversion failed", error);
+    console.error("Image Copy and Reveal: WebP conversion failed", error);
     new Notice(t("compressFailed"));
   }
 }
@@ -336,7 +336,7 @@ async function renameAfterNote(app, embedEl) {
     await app.fileManager.renameFile(file, target);
     new Notice(t("renamed")(target.split("/").pop()));
   } catch (error) {
-    console.error("Image Copy & Reveal: rename failed", error);
+    console.error("Image Copy and Reveal: rename failed", error);
     new Notice(t("renameFailed"));
   }
 }
