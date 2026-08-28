@@ -32,23 +32,27 @@ This is lossy. Pixels change, and the trade is deliberate: screenshots and diagr
 
 Because the extension changes, every note embedding the image is updated through Obsidian's own rename machinery, so links follow the file. The original always goes to the **system trash**, never straight to deletion. For a vault kept in iCloud Drive that is iCloud's own trash rather than the one in the Dock — look in `~/Library/Mobile Documents/.Trash/` if a file seems to have vanished. Files that are already WebP are refused rather than re-encoded, which would only shed more detail, and anything that would not actually get smaller is left alone.
 
-## What copying puts on the clipboard
+## Converting and copying are independent
 
-The system clipboard carries decoded pixels, not a file's own bytes. A 687 KB WebP therefore arrives at the far end as a full-size bitmap, and no choice of format changes that — copying a compressed JPEG behaves exactly the same way. On a 5052×1902 screenshot the numbers look like this:
+Two things have to hold at once, and both do: images in the vault get small, and copying still pastes anywhere it did before.
+
+Conversion delivers the first. A 4.18 MB screenshot becomes 0.67 MB on disk — that is what the vault stores, what sync carries, and what a backup has to move.
+
+Copying is untouched by it. The system clipboard carries decoded pixels rather than a file's own bytes, so a paste behaves identically before and after conversion: an image editor, a canvas, a chat window, a rich text editor all receive what they always did. macOS derives a full set of representations from the bitmap — PNG, JPEG, TIFF, GIF and more — and each application takes the one it prefers.
+
+The consequence is only that the clipboard payload has nothing to do with the file size:
 
 | | Size |
 | --- | --- |
 | Source PNG on disk | 4.18 MB |
 | WebP on disk after conversion | 0.67 MB |
-| PNG placed on the clipboard by copying it | 4.75 MB |
+| PNG placed on the clipboard by copying the WebP | 4.75 MB |
 
-The clipboard copy is larger than the file it came from, and larger again than the original PNG: canvas encodes quickly rather than tightly, and WebP's artefacts compress worse than the clean pixels they replaced. **Convert for what it does to the vault on disk and in sync, not for what it does to a paste.**
+The clipboard copy is larger than either file on disk, because canvas encodes quickly rather than tightly. This is a buffer that lives until the next copy; it is never stored and never synced, so it costs the vault nothing and costs a paste nothing.
 
-The bitmap is nevertheless the right thing to put there, because it is the form every target understands. macOS derives a whole set of representations from it — PNG, JPEG, TIFF, GIF and more — and each application takes the one it prefers, so a paste works in an image editor, a canvas, a chat window and a rich text editor alike.
+Handing the clipboard a reference to the file instead would make a paste land as the compressed file itself. It is not worth it: on macOS the two cannot coexist — writing a custom pasteboard type clears the pasteboard first — so buying that would mean giving up the bitmap, and with it every target that takes an image but not a file. The plugin writes the bitmap, verifies it survived, and restores it if anything displaced it. When a target genuinely needs the small file, the reveal button puts it in Finder ready to drag.
 
-Handing over a reference to the file instead would let a paste land as the compressed original, but the two cannot coexist: on macOS, writing a custom pasteboard type clears the pasteboard first, so the file reference and the bitmap displace one another. The plugin checks afterwards and keeps the bitmap, which means a paste never silently stops working. If a target needs the small file itself, use the reveal button and drag it from there.
-
-WebP cannot be read by Electron's `nativeImage`, so those images are repainted through a canvas to produce the bitmap. PNG and JPEG are handed over directly. Either way the clipboard ends up holding pixels.
+WebP cannot be read by Electron's `nativeImage`, so those images are repainted through a canvas to produce the bitmap. PNG and JPEG are handed over directly.
 
 ## Renaming
 
