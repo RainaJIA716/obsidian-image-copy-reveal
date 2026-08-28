@@ -10,6 +10,12 @@
       <path d="M0 1 L9 5 L0 9 z" fill="#7A5AF8"/>
     </marker>
 
+    <clipPath id="cardClip"><rect x="56" y="100" width="600" height="286" rx="10"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E6EBEC"/>
+      <stop offset="1" stop-color="#F3EFE6"/>
+    </linearGradient>
+
     <g id="ic-zoom"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4M11 8v6M8 11h6"/></g>
     <g id="ic-pencil"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></g>
     <g id="ic-copy"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></g>
@@ -23,20 +29,19 @@
   <rect x="56" y="44" width="560" height="9" rx="4.5" fill="#DFD9CE"/>
   <rect x="56" y="65" width="404" height="9" rx="4.5" fill="#E7E2D9"/>
 
-  <rect x="56" y="100" width="600" height="286" rx="10" fill="#F4F1EA" stroke="#E6E0D6" stroke-width="1.5" filter="url(#soft)"/>
+  <rect x="56" y="100" width="600" height="286" rx="10" fill="#E6EBEC" stroke="#E6E0D6" stroke-width="1.5" filter="url(#soft)"/>
 
-  <!-- a plain wireframe placeholder: this stands for any image, and must not
-       look like content of its own -->
-  <g stroke="#DAD4C8" stroke-width="1.5" fill="none">
-    <path d="M56 100 L656 386"/>
-    <path d="M656 100 L56 386"/>
+  <!-- Stands in for any image. Soft, low-contrast and wordless on purpose:
+       it should read as "a picture" at a glance and never invite a second
+       look, so the toolbar stays the only thing worth reading. -->
+  <g clip-path="url(#cardClip)">
+    <rect x="56" y="100" width="600" height="286" fill="url(#sky)"/>
+    <circle cx="172" cy="182" r="27" fill="#F5EDD9"/>
+    <path d="M56 322 C 158 252, 248 302, 340 272 C 432 242, 528 292, 656 250 L656 386 L56 386 Z" fill="#DEE0D8"/>
+    <path d="M56 350 C 176 298, 286 340, 404 314 C 522 288, 592 320, 656 302 L656 386 L56 386 Z" fill="#CFD2C8"/>
   </g>
-  <g transform="translate(320,207) scale(3)" stroke="#BFB8AA" stroke-width="0.8"
-     fill="#F6F3ED" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2.5"/>
-    <circle cx="9.5" cy="9.5" r="1.8" fill="none"/>
-    <path d="M21 15.5 17.9 12.4a2 2 0 0 0-2.83 0L6.5 21" fill="none"/>
-  </g>
+
+  <rect x="56" y="100" width="600" height="286" rx="10" fill="none" stroke="#E0DAD0" stroke-width="1.5"/>
 
   <!-- toolbar, actual size, sitting in the image's top-right corner -->
   <g transform="translate(390,116)">
