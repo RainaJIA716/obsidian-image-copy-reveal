@@ -9,7 +9,7 @@ Unlike other image plugins, this one does not draw a toolbar of its own. It adds
 | Button | What it does |
 | --- | --- |
 | Rename after this note | Renames the image to match the note it is embedded in, numbering repeats automatically |
-| Convert to WebP | Re-encodes the image as WebP, typically to under a tenth of its size, and sends the original to the system trash |
+| Convert to WebP | Re-encodes the image as WebP, usually shedding 80–90% of its weight, and sends the original to the system trash |
 | Reveal in file explorer | Opens the containing folder and selects the file (Finder on macOS, Explorer on Windows) |
 | Copy image | Puts the image itself on the system clipboard, so it can be pasted into any other app |
 
@@ -26,17 +26,29 @@ Conversion runs through the WebP encoder Chromium already ships with, so there i
 | **WebP, quality 90 (default)** | **109 KB** | **8%** |
 | WebP, quality 85 | 88 KB | 7% |
 
-This is lossy. Pixels change, and the trade is deliberate: screenshots and diagrams survive quality 90 without visible damage while shedding more than 90% of their weight. Photographs with fine gradients deserve a higher setting. Quality is a slider in the plugin's settings; note that 100 is not worth reaching for, as it lands near 89% of the original size.
+Larger screenshots give up proportionally less, since more of their weight is real detail rather than flat colour. A 5052×1902 screenshot went from 4.18 MB to 0.67 MB at the default quality — 16% of the original rather than 8%. Expect somewhere in that band for interface captures, and less from photographs.
 
-Because the extension changes, every note embedding the image is updated through Obsidian's own rename machinery, so links follow the file. The original always goes to the **system trash**, never straight to deletion. Files that are already WebP are refused rather than re-encoded, which would only shed more detail, and anything that would not actually get smaller is left alone.
+This is lossy. Pixels change, and the trade is deliberate: screenshots and diagrams survive quality 90 without visible damage while shedding the great majority of their weight. Photographs with fine gradients deserve a higher setting. Quality is a slider in the plugin's settings; note that 100 is not worth reaching for, as it lands near 89% of the original size.
+
+Because the extension changes, every note embedding the image is updated through Obsidian's own rename machinery, so links follow the file. The original always goes to the **system trash**, never straight to deletion. For a vault kept in iCloud Drive that is iCloud's own trash rather than the one in the Dock — look in `~/Library/Mobile Documents/.Trash/` if a file seems to have vanished. Files that are already WebP are refused rather than re-encoded, which would only shed more detail, and anything that would not actually get smaller is left alone.
 
 ## What copying puts on the clipboard
 
-The system clipboard carries decoded pixels, not a file's own bytes. A 109 KB WebP therefore arrives at the far end as a full-size bitmap, and no choice of format changes that — copying a compressed JPEG behaves exactly the same way. Compression is worth doing for what it does to the vault on disk and in sync, not for what it does to a paste.
+The system clipboard carries decoded pixels, not a file's own bytes. A 687 KB WebP therefore arrives at the far end as a full-size bitmap, and no choice of format changes that — copying a compressed JPEG behaves exactly the same way. On a 5052×1902 screenshot the numbers look like this:
 
-So the copy button offers two things at once where the platform allows it: the bitmap, for anything that takes an image, and on macOS a reference to the file itself, for anything that takes a file — Finder, mail, chat apps — which then receive the compressed original. Whether both can sit on the clipboard together is up to the platform, so the plugin checks afterwards and keeps the bitmap if the file reference displaced it.
+| | Size |
+| --- | --- |
+| Source PNG on disk | 4.18 MB |
+| WebP on disk after conversion | 0.67 MB |
+| PNG placed on the clipboard by copying it | 4.75 MB |
 
-WebP cannot be read by Electron's `nativeImage`, so those images are repainted through a canvas to produce the bitmap. PNG and JPEG are handed over directly.
+The clipboard copy is larger than the file it came from, and larger again than the original PNG: canvas encodes quickly rather than tightly, and WebP's artefacts compress worse than the clean pixels they replaced. **Convert for what it does to the vault on disk and in sync, not for what it does to a paste.**
+
+The bitmap is nevertheless the right thing to put there, because it is the form every target understands. macOS derives a whole set of representations from it — PNG, JPEG, TIFF, GIF and more — and each application takes the one it prefers, so a paste works in an image editor, a canvas, a chat window and a rich text editor alike.
+
+Handing over a reference to the file instead would let a paste land as the compressed original, but the two cannot coexist: on macOS, writing a custom pasteboard type clears the pasteboard first, so the file reference and the bitmap displace one another. The plugin checks afterwards and keeps the bitmap, which means a paste never silently stops working. If a target needs the small file itself, use the reveal button and drag it from there.
+
+WebP cannot be read by Electron's `nativeImage`, so those images are repainted through a canvas to produce the bitmap. PNG and JPEG are handed over directly. Either way the clipboard ends up holding pixels.
 
 ## Renaming
 
