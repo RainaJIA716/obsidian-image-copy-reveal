@@ -1,0 +1,47 @@
+/* On mobile Obsidian's edit button moves into the plugin's menu. Only toolbars
+   that actually got that menu lose it, so it can never vanish on its own. */
+.is-mobile .image-embed .embed-actions[data-image-copy-reveal-menu] .edit-block-button {
+  display: none;
+}
+
+.image-copy-reveal-resize {
+  position: fixed;
+  z-index: var(--layer-menu);
+  width: min(360px, calc(100vw - 16px));
+  padding: var(--size-4-3);
+  border: var(--border-width) solid var(--background-modifier-border);
+  border-radius: var(--radius-l);
+  background-color: var(--background-primary);
+  box-shadow: var(--shadow-l);
+}
+
+.image-copy-reveal-resize-row {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-3);
+}
+
+.image-copy-reveal-resize-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.image-copy-reveal-resize-value {
+  min-width: 4.5em;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.image-copy-reveal-resize-presets {
+  display: flex;
+  gap: var(--size-4-2);
+  margin-top: var(--size-4-3);
+}
+
+.image-copy-reveal-resize-presets button {
+  flex: 1;
+  padding-inline: 0;
+  font-size: var(--font-ui-small);
+}

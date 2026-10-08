@@ -1,9 +1,11 @@
 "use strict";
 
-const { Plugin, PluginSettingTab, Setting, Notice, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
-const { Buffer } = require("buffer");
+const { Plugin, Notice, Menu, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
 
 const MARK = "imageCopyRevealAdded";
+// Set on toolbars that got the mobile "more" button; styles.css hides the
+// native edit button only there, so it never disappears without a replacement.
+const MENU_MARK = "imageCopyRevealMenu";
 
 /* ── strings ─────────────────────────────────────────────────────────── */
 
@@ -16,13 +18,17 @@ const STRINGS = {
   en: {
     copy: "Copy image",
     reveal: REVEAL_LABEL.en,
-    compress: "Convert to WebP",
     rename: "Rename after this note",
+    edit: "Edit link",
+    resize: "Resize",
+    delete: "Delete image",
+    more: "Image actions",
 
     copyCommand: "Copy image under cursor",
     revealCommand: `${REVEAL_LABEL.en}: image under cursor`,
-    compressCommand: "Convert image under cursor to WebP",
     renameCommand: "Rename image under cursor after this note",
+    resizeCommand: "Resize image under cursor",
+    deleteCommand: "Delete image under cursor",
 
     copied: "Image copied",
     copyFailed: "Could not copy the image",
@@ -31,29 +37,32 @@ const STRINGS = {
     notInVault: "This only works on images stored in the vault",
     noNote: "Could not tell which note this image belongs to",
 
-    unsupported: "Only PNG, JPEG and BMP can be converted",
-    alreadyWebp: "Already a WebP, not compressing it again",
-    working: "Converting…",
-    alreadySmall: "WebP would not be smaller, left untouched",
-    compressed: (pct, from, to) => `Compressed ${pct}% (${from} → ${to}). Original moved to the trash.`,
-    compressFailed: "Could not convert the image",
-    qualityName: "WebP quality",
-    qualityDesc: "Higher keeps more detail and produces bigger files. 90 is a good starting point for screenshots.",
-
     renameSame: "Already named after this note",
     renamed: (name) => `Renamed to ${name}`,
     renameFailed: "Could not rename the image",
+
+    original: "Original",
+    notLocated: "Could not find this image's link in the note",
+    deletedLink: "Image removed",
+    deletedFile: "Image removed, and its file deleted",
+    keptInUse: (n) => `Image removed. The file is used in ${n} more place${n === 1 ? "" : "s"}, so it was kept`,
+    keptCancelled: "Image removed, file kept",
+    deleteFailed: "Image removed, but its file could not be deleted",
   },
   zh: {
     copy: "复制图片",
     reveal: REVEAL_LABEL.zh,
-    compress: "转为 WebP",
     rename: "重命名为笔记名",
+    edit: "编辑链接",
+    resize: "调整大小",
+    delete: "删除图片",
+    more: "图片操作",
 
     copyCommand: "复制鼠标下的图片",
     revealCommand: `${REVEAL_LABEL.zh}：鼠标下的图片`,
-    compressCommand: "把鼠标下的图片转为 WebP",
     renameCommand: "把鼠标下的图片重命名为笔记名",
+    resizeCommand: "调整鼠标下图片的大小",
+    deleteCommand: "删除鼠标下的图片",
 
     copied: "已复制图片",
     copyFailed: "复制图片失败",
@@ -62,18 +71,17 @@ const STRINGS = {
     notInVault: "只能处理库内的图片",
     noNote: "无法确定图片所在的笔记",
 
-    unsupported: "只支持 PNG、JPEG、BMP 转 WebP",
-    alreadyWebp: "已经是 WebP，不重复有损压缩",
-    working: "正在压缩…",
-    alreadySmall: "转成 WebP 反而更大，未做改动",
-    compressed: (pct, from, to) => `已压缩 ${pct}%（${from} → ${to}），原图已移到废纸篓`,
-    compressFailed: "压缩失败",
-    qualityName: "WebP 质量",
-    qualityDesc: "越高越清晰，文件也越大。截图建议 90。",
-
     renameSame: "文件名已经和笔记一致",
     renamed: (name) => `已重命名为 ${name}`,
     renameFailed: "重命名失败",
+
+    original: "原始",
+    notLocated: "在笔记里找不到这张图片的链接",
+    deletedLink: "已删除图片",
+    deletedFile: "已删除图片和图片文件",
+    keptInUse: (n) => `已删除图片；还有 ${n} 处在用这个文件，文件保留`,
+    keptCancelled: "已删除图片，图片文件保留",
+    deleteFailed: "已删除图片，但图片文件没能删掉",
   },
 };
 
@@ -81,11 +89,6 @@ function t(key) {
   const lang = window.localStorage.getItem("language") || "en";
   const table = lang.startsWith("zh") ? STRINGS.zh : STRINGS.en;
   return table[key];
-}
-
-function formatSize(bytes) {
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  return `${Math.round(bytes / 1024)} KB`;
 }
 
 /* ── locating the file behind an embed ───────────────────────────────── */
@@ -103,12 +106,13 @@ function pathFromSrc(src) {
   }
 }
 
+function leafForEmbed(app, embedEl) {
+  return app.workspace.getLeavesOfType("markdown").find((leaf) => leaf.view?.containerEl?.contains(embedEl)) ?? null;
+}
+
 /** Which note is this embed rendered in? The active file is only a fallback. */
 function noteForEmbed(app, embedEl) {
-  for (const leaf of app.workspace.getLeavesOfType("markdown")) {
-    if (leaf.view?.containerEl?.contains(embedEl)) return leaf.view.file;
-  }
-  return app.workspace.getActiveFile();
+  return leafForEmbed(app, embedEl)?.view.file ?? app.workspace.getActiveFile();
 }
 
 /** The vault file behind the embed, or null for remote images. */
@@ -150,41 +154,207 @@ function resolvePath(app, embedEl) {
 
 const joinPath = (dir, name) => (dir && dir !== "/" ? `${dir}/${name}` : name);
 
-/* ── lossless optimisers ─────────────────────────────────────────────── */
+/* ── the link text behind an embed ───────────────────────────────────── */
 
-const WEBP_SOURCES = ["png", "jpg", "jpeg", "bmp"];
+// The same two patterns Obsidian uses for a whole embed, wikilink and Markdown.
+const WIKI_EMBED = /^(!?\[\[)(.*?)(\|(.*))?(]])$/;
+const MD_EMBED = /^(!?\[)(.*?)(]\(\s*)((<[^>]*?>|[^ "]+?)(\s+([^ ]+|"[^"]+"|'[^']+'|\([^']+\)))?)?(\s*\))$/;
+// Every embed in a note, for finding the one a rendered image came from.
+const ANY_EMBED = /!\[\[[^\]\n]+?\]\]|!\[[^\]\n]*\]\([^)\n]*\)/g;
+// Every link of either kind, embedded or not, for counting references.
+const ANY_LINK = /\[\[([^\]\n]+?)\]\]|\]\(\s*(<[^>\n]*>|[^)\s]+)[^)\n]*\)/g;
 
-// Below this, a rewrite costs more than it saves.
-const MIN_SAVING_BYTES = 1024;
-const MIN_SAVING_RATIO = 0.01;
+const SIZE = /^\s*[0-9]+\s*(?:x\s*[0-9]+\s*)?$/;
 
-/** Re-encode through the WebP encoder Chromium already ships with. */
-async function encodeWebp(app, file, quality) {
-  const source = await app.vault.readBinary(file);
-  const bitmap = await createImageBitmap(new Blob([source]));
+/** Put a width into, or with null take it out of, the alias part of a link. */
+function withSize(alias, width) {
+  const size = width == null ? "" : String(width);
+  if (!alias || SIZE.test(alias)) return size;
+  const tail = size ? `|${size}` : "";
+  const bar = alias.lastIndexOf("|");
+  if (bar !== -1 && SIZE.test(alias.slice(bar + 1))) return alias.slice(0, bar) + tail;
+  return alias + tail;
+}
 
-  const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  canvas.getContext("2d").drawImage(bitmap, 0, 0);
-  bitmap.close();
+/** Rewrite an embed's width the way Obsidian's own resize handle does. */
+function setLinkWidth(text, width) {
+  let m = text.match(WIKI_EMBED);
+  if (m) {
+    const alias = withSize(m[4] ?? "", width);
+    return `![[${m[2]}${alias ? `|${alias}` : ""}]]`;
+  }
+  m = text.match(MD_EMBED);
+  if (m) return m[1] + withSize(m[2], width) + m[3] + (m[4] ?? "") + m[8];
+  return text;
+}
 
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", quality / 100));
-  if (!blob) return null;
-  return { bytes: new Uint8Array(await blob.arrayBuffer()), sourceBytes: new Uint8Array(source) };
+/** The width an embed's text asks for, or null when it has none. */
+function linkWidth(text) {
+  const m = text.match(WIKI_EMBED);
+  const alias = m ? m[4] ?? "" : text.match(MD_EMBED)?.[2] ?? "";
+  const size = alias.slice(alias.lastIndexOf("|") + 1);
+  return SIZE.test(size) ? parseInt(size, 10) : null;
+}
+
+/** The link target written in an embed or link, without subpath or size. */
+function linkpathOf(text) {
+  let m = text.match(WIKI_EMBED);
+  if (m) return m[2].split("#")[0];
+  m = text.match(MD_EMBED);
+  if (!m || !m[5]) return null;
+  let url = m[5];
+  if (url.startsWith("<") && url.endsWith(">")) url = url.slice(1, -1).trim();
+  try {
+    url = decodeURI(url);
+  } catch (error) {
+    // Leave a malformed escape as it was written.
+  }
+  return url.split("#")[0];
+}
+
+/** What a link points at: the vault file, or the URL itself for remote images. */
+function targetOf(app, linkpath, sourcePath) {
+  if (!linkpath) return null;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(linkpath)) return linkpath;
+  return app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath);
+}
+
+function editorViewFor(app, embedEl) {
+  try {
+    const view = require("@codemirror/view").EditorView.findFromDOM(embedEl);
+    if (view) return view;
+  } catch (error) {
+    // Fall through to the editor that owns the leaf.
+  }
+  return leafForEmbed(app, embedEl)?.view.editor?.cm ?? null;
+}
+
+/**
+ * Where in the note's text this rendered image comes from. Of the embeds that
+ * point at the same file, the one nearest the widget's position wins; that is
+ * the widget itself, unless it is drawn inside something larger like a callout.
+ */
+function locateLink(app, embedEl) {
+  const view = editorViewFor(app, embedEl);
+  if (!view || !embedEl.isConnected) return null;
+  const note = noteForEmbed(app, embedEl);
+  const sourcePath = note?.path ?? "";
+  const file = resolveFile(app, embedEl);
+  const want = file ?? embedEl.getAttribute("src");
+  if (!want) return null;
+
+  let pos = 0;
+  try {
+    pos = view.posAtDOM(embedEl);
+  } catch (error) {
+    // Unknown position: any embed of the same file will be judged by distance from the top.
+  }
+
+  const doc = view.state.doc.toString();
+  let best = null;
+  let bestDistance = Infinity;
+  for (const m of doc.matchAll(ANY_EMBED)) {
+    const from = m.index;
+    const to = from + m[0].length;
+    if (targetOf(app, linkpathOf(m[0]), sourcePath) !== want) continue;
+    const distance = pos < from ? from - pos : pos > to ? pos - to : 0;
+    if (distance < bestDistance) {
+      best = { from, to, text: m[0] };
+      bestDistance = distance;
+    }
+  }
+  return best && { view, file, note, ...best };
+}
+
+/** The rendered embed for the link at [from, to], after the editor has redrawn it. */
+function embedAt(view, from, to) {
+  for (const el of view.contentDOM.querySelectorAll(".image-embed")) {
+    try {
+      const pos = view.posAtDOM(el);
+      if (pos >= from && pos <= to) return el;
+    } catch (error) {
+      // Not part of this editor's document.
+    }
+  }
+  return null;
+}
+
+/** How many links in a piece of note text point at `file`. */
+function countLinksIn(app, text, file, sourcePath) {
+  let count = 0;
+  for (const m of text.matchAll(ANY_LINK)) {
+    let linkpath = m[1] !== undefined ? m[1].split("|")[0] : m[2];
+    if (m[2] !== undefined) {
+      if (linkpath.startsWith("<") && linkpath.endsWith(">")) linkpath = linkpath.slice(1, -1).trim();
+      try {
+        linkpath = decodeURI(linkpath);
+      } catch (error) {
+        // Keep it as written.
+      }
+    }
+    if (targetOf(app, linkpath.split("#")[0], sourcePath) === file) count += 1;
+  }
+  return count;
+}
+
+/**
+ * How many places other than this one still use `file`. Whenever there is
+ * doubt the answer leans towards "still used", because the cost of a wrong
+ * guess is a deleted file rather than a stray one.
+ */
+async function otherReferences(app, file, note, noteText) {
+  const notePath = note?.path ?? "";
+  // This note is read from the editor, not the cache, which may not have
+  // caught up with the last few keystrokes yet.
+  let count = Math.max(countLinksIn(app, noteText, file, notePath) - 1, 0);
+
+  const resolved = app.metadataCache.resolvedLinks;
+  for (const source in resolved) {
+    if (source !== notePath) count += resolved[source][file.path] ?? 0;
+  }
+
+  // Other notes open in an editor may hold edits the cache has not seen.
+  for (const leaf of app.workspace.getLeavesOfType("markdown")) {
+    const path = leaf.view?.file?.path;
+    if (!path || path === notePath || resolved[path]?.[file.path]) continue;
+    if ((leaf.view.editor?.getValue() ?? "").includes(file.name)) count += 1;
+  }
+
+  // Recent versions index canvases; for any the cache has not credited with
+  // this file, look inside directly.
+  for (const canvas of app.vault.getFiles()) {
+    if (canvas.extension !== "canvas" || resolved[canvas.path]?.[file.path]) continue;
+    if ((await app.vault.cachedRead(canvas)).includes(file.name)) count += 1;
+  }
+  return count;
 }
 
 /* ── actions ─────────────────────────────────────────────────────────── */
 
-/** Repaint the rendered image into PNG bytes, for formats nativeImage cannot read. */
-async function renderToPng(embedEl) {
+/**
+ * Re-encode an image as PNG bytes, for formats nativeImage cannot read.
+ *
+ * Decoded from the file's own bytes rather than painted from the <img> on the
+ * page: that one is served from an app://<hash>/ origin, which taints the
+ * canvas and makes it refuse to export.
+ */
+async function renderToPng(app, embedEl) {
+  const file = resolveFile(app, embedEl);
   const img = embedEl.querySelector("img");
-  if (!img) return null;
+  let source;
+  if (file) source = await createImageBitmap(new Blob([await app.vault.readBinary(file)]));
+  else if (img) source = img; // Outside the vault: may be refused, and is reported if so.
+  else return null;
+
   const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  canvas.getContext("2d").drawImage(img, 0, 0);
+  canvas.width = source.naturalWidth || source.width;
+  canvas.height = source.naturalHeight || source.height;
+  canvas.getContext("2d").drawImage(source, 0, 0);
+  if (source !== img) source.close();
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  // Loaded here rather than at the top: Node modules do not exist on mobile,
+  // and only the desktop copy path needs a Buffer.
+  const { Buffer } = require("buffer");
   return blob ? Buffer.from(await blob.arrayBuffer()) : null;
 }
 
@@ -201,8 +371,12 @@ async function copyImage(app, embedEl) {
   }
   if (!image) {
     // nativeImage reads only PNG and JPEG, so WebP and friends go via canvas.
-    const png = await renderToPng(embedEl);
-    if (png) image = nativeImage.createFromBuffer(png);
+    try {
+      const png = await renderToPng(app, embedEl);
+      if (png) image = nativeImage.createFromBuffer(png);
+    } catch (error) {
+      console.error("Image Copy and Reveal: re-encoding for the clipboard failed", error);
+    }
   }
   if (!image || image.isEmpty()) {
     new Notice(t("copyFailed"));
@@ -233,70 +407,6 @@ function revealImage(app, embedEl) {
   } catch (error) {
     console.error("Image Copy and Reveal: showItemInFolder failed", error);
     new Notice(t("revealFailed"));
-  }
-}
-
-async function compressImage(app, embedEl, settings) {
-  const file = resolveFile(app, embedEl);
-  if (!file) {
-    new Notice(t("notInVault"));
-    return;
-  }
-
-  const extension = file.extension.toLowerCase();
-  if (extension === "webp") {
-    // Re-encoding an already lossy file only throws away more detail.
-    new Notice(t("alreadyWebp"));
-    return;
-  }
-  if (!WEBP_SOURCES.includes(extension)) {
-    new Notice(t("unsupported"));
-    return;
-  }
-
-  const notice = new Notice(t("working"), 0);
-  try {
-    const encoded = await encodeWebp(app, file, settings.quality);
-    if (!encoded) {
-      notice.hide();
-      new Notice(t("compressFailed"));
-      return;
-    }
-
-    const { bytes, sourceBytes } = encoded;
-    const saved = sourceBytes.length - bytes.length;
-    if (saved < MIN_SAVING_BYTES || saved / sourceBytes.length < MIN_SAVING_RATIO) {
-      notice.hide();
-      new Notice(t("alreadySmall"));
-      return;
-    }
-
-    const dir = file.parent?.path ?? "";
-    const sourcePath = file.path;
-    let target = joinPath(dir, `${file.basename}.webp`);
-    let suffix = 0;
-    while (app.vault.getAbstractFileByPath(target)) {
-      suffix += 1;
-      target = joinPath(dir, `${file.basename}-${suffix}.webp`);
-    }
-
-    // Rename first, so every note that embeds this image follows the file to
-    // its new extension. The bytes are still the old ones at this point.
-    await app.fileManager.renameFile(file, target);
-    await app.vault.modifyBinary(file, bytes.buffer);
-
-    // Put the untouched original back under its old name purely so it can go
-    // to the trash looking like itself, rather than as a stray temp file.
-    const original = await app.vault.createBinary(sourcePath, sourceBytes.buffer);
-    await app.vault.trash(original, true);
-
-    notice.hide();
-    const percent = Math.round((saved / sourceBytes.length) * 100);
-    new Notice(t("compressed")(percent, formatSize(sourceBytes.length), formatSize(bytes.length)));
-  } catch (error) {
-    notice.hide();
-    console.error("Image Copy and Reveal: WebP conversion failed", error);
-    new Notice(t("compressFailed"));
   }
 }
 
@@ -340,50 +450,218 @@ async function renameAfterNote(app, embedEl) {
   }
 }
 
-/* ── plugin ──────────────────────────────────────────────────────────── */
+/**
+ * Remove the embed from the note, then the file too when nothing else uses
+ * it. The undoable step goes first; the file is touched last, and only
+ * through Obsidian's own deletion, so the user's confirm-before-deleting and
+ * trash settings decide what happens to it.
+ */
+async function deleteImage(app, embedEl) {
+  const found = locateLink(app, embedEl);
+  if (!found) {
+    new Notice(t("notLocated"));
+    return;
+  }
+  const { view, file, note, text } = found;
 
-const DEFAULT_SETTINGS = { quality: 90 };
-
-// Left to right, following the two buttons Obsidian draws itself.
-const ACTIONS = [
-  { id: "rename-image-under-cursor", icon: "text-cursor-input", label: "rename", command: "renameCommand",
-    run: (plugin, el) => renameAfterNote(plugin.app, el) },
-  { id: "compress-image-under-cursor", icon: "file-archive", label: "compress", command: "compressCommand",
-    run: (plugin, el) => compressImage(plugin.app, el, plugin.settings) },
-  { id: "reveal-image-under-cursor", icon: "folder-open", label: "reveal", command: "revealCommand",
-    run: (plugin, el) => revealImage(plugin.app, el) },
-  { id: "copy-image-under-cursor", icon: "copy", label: "copy", command: "copyCommand",
-    run: (plugin, el) => copyImage(plugin.app, el) },
-];
-
-class ImageCopyRevealSettingTab extends PluginSettingTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
+  let others = 0;
+  if (file) {
+    const noteText = leafForEmbed(app, embedEl)?.view.editor?.getValue() ?? view.state.doc.toString();
+    others = await otherReferences(app, file, note, noteText);
   }
 
-  display() {
-    this.containerEl.empty();
-    new Setting(this.containerEl)
-      .setName(t("qualityName"))
-      .setDesc(t("qualityDesc"))
-      .addSlider((slider) =>
-        slider
-          .setLimits(50, 100, 1)
-          .setValue(this.plugin.settings.quality)
-          .setDynamicTooltip()
-          .onChange(async (value) => {
-            this.plugin.settings.quality = value;
-            await this.plugin.saveSettings();
-          })
-      );
+  // Counting may have waited on disk reads; the link must still be where it was.
+  const again = locateLink(app, embedEl);
+  if (!again || again.text !== text) {
+    new Notice(t("notLocated"));
+    return;
+  }
+  let { from, to } = again;
+  const line = view.state.doc.lineAt(from);
+  // An image on a line of its own takes its line break with it.
+  if (line.text.trim() === text && line.number < view.state.doc.lines) {
+    from = line.from;
+    to = line.to + 1;
+  }
+  view.dispatch({ changes: { from, to, insert: "" }, userEvent: "delete.selection" });
+
+  if (!file) {
+    new Notice(t("deletedLink"));
+    return;
+  }
+  if (others > 0) {
+    new Notice(t("keptInUse")(others));
+    return;
+  }
+  try {
+    const deleted = await app.fileManager.promptForDeletion(file);
+    new Notice(t(deleted ? "deletedFile" : "keptCancelled"));
+  } catch (error) {
+    console.error("Image Copy and Reveal: deleting the file failed", error);
+    new Notice(t("deleteFailed"));
   }
 }
 
+/* ── resize panel (mobile, where Obsidian draws no resize handle) ─────── */
+
+const MIN_WIDTH = 20; // Obsidian's own handle stops here too.
+const PRESETS = [25, 50, 75, 100];
+
+class ResizePanel {
+  constructor(found, onClose) {
+    this.view = found.view;
+    this.from = found.from;
+    this.text = found.text;
+    this.onClose = onClose;
+    this.embedEl = embedAt(this.view, found.from, found.to);
+    // Same ceiling as the resize handle: the width of the editor's text column.
+    this.max = Math.max(MIN_WIDTH, this.view.contentDOM.offsetWidth);
+
+    const el = (this.el = document.body.createDiv("image-copy-reveal-resize"));
+    const row = el.createDiv("image-copy-reveal-resize-row");
+    this.slider = row.createEl("input", { type: "range" });
+    this.slider.min = String(MIN_WIDTH);
+    this.slider.max = String(this.max);
+    this.valueEl = row.createSpan("image-copy-reveal-resize-value");
+
+    const presets = el.createDiv("image-copy-reveal-resize-presets");
+    for (const pct of PRESETS) {
+      presets.createEl("button", { text: `${pct}%` }).addEventListener("click", () =>
+        this.apply(Math.max(MIN_WIDTH, Math.round((this.max * pct) / 100)))
+      );
+    }
+    presets.createEl("button", { text: t("original") }).addEventListener("click", () => this.apply(null));
+
+    // Dragging only repaints; the note changes once, on release.
+    this.slider.addEventListener("input", () => this.preview(Number(this.slider.value)));
+    this.slider.addEventListener("change", () => this.apply(Number(this.slider.value)));
+
+    this.showValue(linkWidth(this.text));
+    this.place();
+
+    this.onPointerDown = (event) => {
+      if (!el.contains(event.target)) this.close();
+    };
+    this.onKeyDown = (event) => {
+      if (event.key === "Escape") this.close();
+    };
+    this.onScroll = () => this.place();
+    // Next tick, so the tap that opened the panel does not also close it.
+    window.setTimeout(() => {
+      if (!this.el) return;
+      document.addEventListener("pointerdown", this.onPointerDown, true);
+      document.addEventListener("keydown", this.onKeyDown, true);
+      this.view.scrollDOM.addEventListener("scroll", this.onScroll, { passive: true });
+    }, 0);
+  }
+
+  img() {
+    if (!this.embedEl?.isConnected) this.embedEl = embedAt(this.view, this.from, this.from + this.text.length);
+    return this.embedEl?.querySelector("img") ?? null;
+  }
+
+  showValue(width) {
+    const shown = width ?? this.img()?.clientWidth ?? this.max;
+    this.slider.value = String(Math.min(Math.max(shown, MIN_WIDTH), this.max));
+    this.valueEl.setText(width == null ? t("original") : `${width}px`);
+  }
+
+  preview(width) {
+    const img = this.img();
+    if (img) img.width = width;
+    this.valueEl.setText(`${width}px`);
+  }
+
+  apply(width) {
+    const doc = this.view.state.doc;
+    const to = this.from + this.text.length;
+    // The note may have been edited elsewhere since the panel opened.
+    if (to > doc.length || doc.sliceString(this.from, to) !== this.text) {
+      new Notice(t("notLocated"));
+      this.close();
+      return;
+    }
+    const next = setLinkWidth(this.text, width);
+    if (next !== this.text) {
+      this.view.dispatch({ changes: { from: this.from, to, insert: next }, scrollIntoView: false });
+      this.text = next;
+    }
+    const img = this.img();
+    if (img) {
+      if (width == null) img.removeAttribute("width");
+      else img.width = width;
+    }
+    this.showValue(width);
+    this.place();
+  }
+
+  /** Below the image, kept on screen; above it when there is no room below. */
+  place() {
+    const anchor = (this.img() ?? this.embedEl)?.getBoundingClientRect();
+    const { offsetWidth: w, offsetHeight: h } = this.el;
+    const margin = 8;
+    let top = anchor ? anchor.bottom + margin : (window.innerHeight - h) / 2;
+    if (anchor && top + h > window.innerHeight - margin) top = anchor.top - h - margin;
+    top = Math.min(Math.max(top, margin), window.innerHeight - h - margin);
+    const left = Math.min(Math.max(anchor ? anchor.left : margin, margin), window.innerWidth - w - margin);
+    this.el.setCssStyles({ top: `${top}px`, left: `${Math.max(left, margin)}px` });
+  }
+
+  close() {
+    if (!this.el) return;
+    document.removeEventListener("pointerdown", this.onPointerDown, true);
+    document.removeEventListener("keydown", this.onKeyDown, true);
+    this.view.scrollDOM.removeEventListener("scroll", this.onScroll);
+    this.el.remove();
+    this.el = null;
+    this.onClose(this);
+  }
+}
+
+/** Obsidian's own edit button in this toolbar, when there is one. */
+const nativeEditButton = (embedEl) => embedEl.querySelector(".embed-actions .edit-block-button");
+
+/* ── plugin ──────────────────────────────────────────────────────────── */
+
+// One table drives the desktop buttons, the mobile menu and the commands.
+//   button: shown in the desktop toolbar, left to right after Obsidian's own two
+//   menu:   listed in the mobile "more" menu, top to bottom
+//   electron: needs the desktop app, so it is neither shown nor registered on mobile
+const ACTIONS = [
+  { id: "edit-image-link", icon: "code-2", label: "edit", menu: true,
+    available: (el) => !!nativeEditButton(el),
+    run: (plugin, el) => nativeEditButton(el)?.click() },
+  { id: "resize-image-under-cursor", icon: "scaling", label: "resize", command: "resizeCommand", menu: true,
+    run: (plugin, el) => plugin.openResizePanel(el) },
+  { id: "rename-image-under-cursor", icon: "text-cursor-input", label: "rename", command: "renameCommand",
+    button: true, menu: true,
+    run: (plugin, el) => renameAfterNote(plugin.app, el) },
+  { id: "reveal-image-under-cursor", icon: "folder-open", label: "reveal", command: "revealCommand",
+    button: true, electron: true,
+    run: (plugin, el) => revealImage(plugin.app, el) },
+  { id: "copy-image-under-cursor", icon: "copy", label: "copy", command: "copyCommand",
+    button: true, electron: true,
+    run: (plugin, el) => copyImage(plugin.app, el) },
+  { id: "delete-image-under-cursor", icon: "trash-2", label: "delete", command: "deleteCommand",
+    button: true, menu: true, warning: true,
+    run: (plugin, el) => deleteImage(plugin.app, el) },
+];
+
 module.exports = class ImageCopyRevealPlugin extends Plugin {
   async onload() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    this.addSettingTab(new ImageCopyRevealSettingTab(this.app, this));
+    this.panel = null;
+    this.register(() => this.panel?.close());
+    // Toolbars outlive the plugin, so take back everything added to them;
+    // otherwise a reload leaves buttons wired to the old code behind.
+    this.register(() => {
+      const container = this.app.workspace.containerEl;
+      container.querySelectorAll(".image-copy-reveal-action").forEach((el) => el.remove());
+      container.querySelectorAll("[data-image-copy-reveal-added]").forEach((el) => {
+        delete el.dataset[MARK];
+        delete el.dataset[MENU_MARK];
+      });
+    });
+    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.panel?.close()));
 
     this.app.workspace.onLayoutReady(() => {
       this.decorateAll();
@@ -391,21 +669,19 @@ module.exports = class ImageCopyRevealPlugin extends Plugin {
     });
 
     for (const action of ACTIONS) {
+      if (!action.command || (action.electron && !Platform.isDesktopApp)) continue;
       this.addCommand({
         id: action.id,
         name: t(action.command),
+        icon: action.icon,
         checkCallback: (checking) => {
-          const embedEl = this.hoveredEmbed();
+          const embedEl = this.targetEmbed();
           if (!embedEl) return false;
           if (!checking) action.run(this, embedEl);
           return true;
         },
       });
     }
-  }
-
-  async saveSettings() {
-    await this.saveData(this.settings);
   }
 
   /** Obsidian builds its toolbar lazily, so watch the workspace for it appearing. */
@@ -423,8 +699,10 @@ module.exports = class ImageCopyRevealPlugin extends Plugin {
     this.register(() => observer.disconnect());
   }
 
-  hoveredEmbed() {
-    return this.app.workspace.containerEl.querySelector(".image-embed:hover");
+  /** The image under the mouse, or on mobile, the one tapped to select it. */
+  targetEmbed() {
+    const container = this.app.workspace.containerEl;
+    return container.querySelector(".image-embed:hover") ?? container.querySelector(".image-embed.is-selected");
   }
 
   decorateAll() {
@@ -440,22 +718,60 @@ module.exports = class ImageCopyRevealPlugin extends Plugin {
     if (!embedEl) return;
     actionsEl.dataset[MARK] = "1";
 
+    if (Platform.isMobile) {
+      // A phone has room for one button, so everything, Obsidian's own edit
+      // button included, goes into a menu behind it.
+      actionsEl.dataset[MENU_MARK] = "1";
+      this.addButton(actionsEl, "more-horizontal", t("more"), (buttonEl) => this.showMenu(embedEl, buttonEl));
+      return;
+    }
     for (const action of ACTIONS) {
+      if (!action.button || (action.electron && !Platform.isDesktopApp)) continue;
       this.addButton(actionsEl, action.icon, t(action.label), () => action.run(this, embedEl));
     }
   }
 
+  showMenu(embedEl, buttonEl) {
+    const menu = new Menu();
+    for (const action of ACTIONS) {
+      if (!action.menu || (action.electron && !Platform.isDesktopApp)) continue;
+      if (action.available && !action.available(embedEl)) continue;
+      menu.addItem((item) => {
+        item.setTitle(t(action.label)).setIcon(action.icon).onClick(() => action.run(this, embedEl));
+        if (action.warning) item.setWarning(true);
+      });
+    }
+    // Anchored to the button rather than the tap, the way Obsidian's own view
+    // actions do it. On a phone the menu becomes a bottom sheet either way.
+    const rect = buttonEl.getBoundingClientRect();
+    menu.showAtPosition({ x: rect.left, y: rect.bottom, width: rect.width, overlap: true, left: true });
+  }
+
+  openResizePanel(embedEl) {
+    this.panel?.close();
+    const found = locateLink(this.app, embedEl);
+    if (!found) {
+      new Notice(t("notLocated"));
+      return;
+    }
+    this.panel = new ResizePanel(found, (panel) => {
+      if (this.panel === panel) this.panel = null;
+    });
+  }
+
   addButton(actionsEl, icon, tooltip, handler) {
-    const el = actionsEl.createDiv("embed-action");
+    const el = actionsEl.createDiv("embed-action image-copy-reveal-action");
     setIcon(el, icon);
     setTooltip(el, tooltip, { placement: "top" });
-    // Plain listener on purpose: these buttons are created and thrown away
+    // Plain listeners on purpose: these buttons are created and thrown away
     // constantly, and registerDomEvent would hold a reference to every one of
     // them until unload.
+    // Keep the editor's focus, so a tap does not bring up the keyboard.
+    el.addEventListener("mousedown", (event) => event.preventDefault());
     el.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      handler();
+      handler(el);
     });
     return el;
   }

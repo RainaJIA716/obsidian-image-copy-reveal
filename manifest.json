@@ -1,10 +1,10 @@
 {
   "id": "image-copy-reveal",
   "name": "Image Copy and Reveal",
-  "version": "1.2.4",
+  "version": "1.3.0",
   "minAppVersion": "1.13.0",
-  "description": "Rename an image after its note, convert it to WebP, reveal it in Finder or Explorer, or copy it to the clipboard, from the built-in image toolbar.",
+  "description": "Resize, rename or delete an image from the built-in image toolbar, on mobile too, and on desktop reveal it in Finder or Explorer or copy it to the clipboard.",
   "author": "RainaJIA716",
   "authorUrl": "https://github.com/RainaJIA716",
-  "isDesktopOnly": true
+  "isDesktopOnly": false
 }
