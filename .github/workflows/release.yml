@@ -1,0 +1,73 @@
+name: Release
+
+# Attaches the plugin's files to a release on a version tag, signed with build
+# provenance so anyone can verify they came from this repo. There is no build
+# step: main.js is the source.
+#
+# Run it by hand with a tag to sign a release that already exists. It then
+# checks that release's files are byte for byte the ones in the tag before
+# signing, and leaves the release itself alone.
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to sign, e.g. 1.3.0"
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Check the tag matches the manifest
+        run: |
+          manifest="$(node -p "require('./manifest.json').version")"
+          if [ "$TAG" != "$manifest" ]; then
+            echo "tag $TAG does not match manifest version $manifest" >&2
+            exit 1
+          fi
+
+      - name: Check an existing release carries these exact files
+        id: existing
+        run: |
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+          mkdir -p /tmp/published
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir /tmp/published \
+            --pattern main.js --pattern manifest.json --pattern styles.css
+          for f in main.js manifest.json styles.css; do
+            cmp "$f" "/tmp/published/$f" || { echo "$f in the release differs from the tag" >&2; exit 1; }
+          done
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
+      - name: Publish the release
+        if: steps.existing.outputs.exists == 'false'
+        run: |
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --generate-notes \
+            main.js manifest.json styles.css
