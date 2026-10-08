@@ -31,9 +31,16 @@ Every action is also a command, for hotkeys and the mobile toolbar. English and 
 
 Images · Attachments · Interface
 
-## Screenshots (1200×800 at 2x, in this order)
+## Screenshots (desktop slot: 1200×800, 3:2; uploaded at 2x)
 
 1. `1-desktop-toolbar.png`
-2. `2-mobile-resize.png`
-3. `3-delete-image.png`
-4. `4-convert-webp.png`
+2. `3-delete-image.png`
+3. `4-convert-webp.png`
+
+`2-mobile-resize.png` is 3:2 as well and can go here too; it does not fit the mobile slot.
+
+## Mobile screenshots (mobile slot: 900×1600, 9:16 portrait; uploaded at 2x)
+
+1. `m1-mobile-menu.png`
+2. `m2-mobile-resize.png`
+3. `m3-mobile-delete.png`

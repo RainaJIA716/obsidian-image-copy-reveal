@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1600" width="900" height="1600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif"><defs>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#2B2A28" flood-opacity="0.10"/></filter>
+  <filter id="lift" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="18" flood-color="#2B2A28" flood-opacity="0.16"/></filter>
+  <g id="ic-code"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></g>
+  <g id="ic-scaling"><path d="M21 3 9 15"/><path d="M12 3H3v18h18v-9"/><path d="M16 3h5v5"/><path d="M14 15H9v-5"/></g>
+  <g id="ic-rename"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1"/><path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5"/><path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1"/><path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7"/><path d="M9 7v10"/></g>
+  <g id="ic-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6M14 11v6"/></g>
+  <g id="scene" stroke="#20201D" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="70" cy="47" r="17" fill="#D9C6FB"/>
+    <path d="M70 24v-9M86 31l6-6M93 47h9M86 63l6 6M70 70v9M54 63l-6 6M47 47h-9M54 31l-6-6"/>
+    <path d="M168 53c-6 0-9-4-7-8 1-4 6-6 9-5 1-8 9-12 15-9 3-8 15-9 19-2 7-3 14 2 13 8 5 1 7 5 5 9-2 5-8 7-12 7z"/>
+    <path d="M45 181c-9-2-14-10-11-17-6-6-3-16 5-18 0-9 9-14 16-10 5-7 16-6 19 2 9-1 15 8 11 15 6 5 4 15-4 17-2 7-11 10-17 6-5 6-14 6-19-1z"/>
+    <path d="M56 179c1 18 1 36 0 54M63 181c-1 16-1 34 0 52"/>
+    <path d="M6 240c54-8 124-30 194-37 100-4 180 21 270 41 60 13 90 24 124 33"/>
+  </g>
+</defs>
+  <rect width="900" height="1600" fill="#FAF8F4"/>
+  <text x="450" y="128" text-anchor="middle" font-size="58" font-weight="700" fill="#2B2A28">Delete an image,</text>
+  <text x="450" y="200" text-anchor="middle" font-size="58" font-weight="700" fill="#2B2A28">file only if unused</text>
+  <text x="450" y="270" text-anchor="middle" font-size="30" fill="#8A8580">Undo brings the link back</text>
+  <clipPath id="phone"><rect x="130" y="380" width="640" height="1160" rx="64"/></clipPath>
+  <rect x="130" y="380" width="640" height="1160" rx="64" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="2" filter="url(#lift)"/>
+  <g clip-path="url(#phone)"><rect x="174" y="476" width="380" height="14" rx="7" fill="#DFD9CE"/><rect x="174" y="510" width="260" height="14" rx="7" fill="#E7E2D9"/><rect x="174" y="544" width="420" height="14" rx="7" fill="#DFD9CE"/><rect x="174" y="590" width="552" height="200" rx="14" fill="none" stroke="#D6D0C6" stroke-width="2" stroke-dasharray="10 10"/><text x="450.0" y="702" text-anchor="middle" font-size="28" fill="#8A8580">image removed from the note</text><rect x="174" y="830" width="440" height="14" rx="7" fill="#DFD9CE"/><rect x="174" y="864" width="360" height="14" rx="7" fill="#E7E2D9"/><rect x="174" y="898" width="400" height="14" rx="7" fill="#DFD9CE"/><rect x="174" y="932" width="220" height="14" rx="7" fill="#E7E2D9"/><rect x="156" y="1020" width="588" height="170" rx="28" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="2" filter="url(#lift)"/><use href="#ic-trash" transform="translate(178,1064) scale(1.6)" stroke="#E5484D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="250" y="1092" font-size="30" font-weight="700" fill="#2B2A28">Image removed, and</text><text x="250" y="1136" font-size="30" font-weight="700" fill="#2B2A28">its file deleted</text><rect x="156" y="1220" width="588" height="210" rx="28" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="2" filter="url(#lift)"/><text x="178" y="1274" font-size="30" font-weight="700" fill="#2B2A28">Still used elsewhere?</text><text x="178" y="1324" font-size="28" fill="#8A8580">“The file is used in 1 more</text><text x="178" y="1366" font-size="28" fill="#8A8580">place, so it was kept.”</text></g>
+</svg>

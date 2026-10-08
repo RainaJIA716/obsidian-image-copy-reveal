@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1600" width="900" height="1600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif"><defs>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#2B2A28" flood-opacity="0.10"/></filter>
+  <filter id="lift" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="18" flood-color="#2B2A28" flood-opacity="0.16"/></filter>
+  <g id="ic-code"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></g>
+  <g id="ic-scaling"><path d="M21 3 9 15"/><path d="M12 3H3v18h18v-9"/><path d="M16 3h5v5"/><path d="M14 15H9v-5"/></g>
+  <g id="ic-rename"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1"/><path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5"/><path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1"/><path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7"/><path d="M9 7v10"/></g>
+  <g id="ic-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6M14 11v6"/></g>
+  <g id="scene" stroke="#20201D" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="70" cy="47" r="17" fill="#D9C6FB"/>
+    <path d="M70 24v-9M86 31l6-6M93 47h9M86 63l6 6M70 70v9M54 63l-6 6M47 47h-9M54 31l-6-6"/>
+    <path d="M168 53c-6 0-9-4-7-8 1-4 6-6 9-5 1-8 9-12 15-9 3-8 15-9 19-2 7-3 14 2 13 8 5 1 7 5 5 9-2 5-8 7-12 7z"/>
+    <path d="M45 181c-9-2-14-10-11-17-6-6-3-16 5-18 0-9 9-14 16-10 5-7 16-6 19 2 9-1 15 8 11 15 6 5 4 15-4 17-2 7-11 10-17 6-5 6-14 6-19-1z"/>
+    <path d="M56 179c1 18 1 36 0 54M63 181c-1 16-1 34 0 52"/>
+    <path d="M6 240c54-8 124-30 194-37 100-4 180 21 270 41 60 13 90 24 124 33"/>
+  </g>
+</defs>
+  <rect width="900" height="1600" fill="#FAF8F4"/>
+  <text x="450" y="128" text-anchor="middle" font-size="58" font-weight="700" fill="#2B2A28">Resize images on</text>
+  <text x="450" y="200" text-anchor="middle" font-size="58" font-weight="700" fill="#2B2A28">iPhone and Android</text>
+  <text x="450" y="270" text-anchor="middle" font-size="30" fill="#8A8580">Drag to preview, let go to save</text>
+  <clipPath id="phone"><rect x="130" y="380" width="640" height="1160" rx="64"/></clipPath>
+  <rect x="130" y="380" width="640" height="1160" rx="64" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="2" filter="url(#lift)"/>
+  <g clip-path="url(#phone)"><rect x="174" y="476" width="380" height="14" rx="7" fill="#DFD9CE"/><rect x="174" y="510" width="260" height="14" rx="7" fill="#E7E2D9"/><clipPath id="i2"><rect x="174" y="570" width="276" height="188" rx="14"/></clipPath><rect x="174" y="570" width="276" height="188" rx="14" fill="#F7F3E8" stroke="#E0D7C2" stroke-width="2"/><g clip-path="url(#i2)"><use href="#scene" transform="translate(174,647.6) scale(0.3943)"/></g><rect x="174" y="810" width="440" height="14" rx="7" fill="#DFD9CE"/><rect x="174" y="844" width="340" height="14" rx="7" fill="#E7E2D9"/><rect x="156" y="910" width="588" height="270" rx="32" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="2" filter="url(#lift)"/><rect x="180" y="976" width="380" height="12" rx="6" fill="#E4DFD7"/><rect x="180" y="976" width="190" height="12" rx="6" fill="#7A5AF8"/><circle cx="370" cy="982" r="24" fill="#FFFFFF" stroke="#D6D0C6" stroke-width="2" filter="url(#soft)"/><text x="722" y="994" text-anchor="end" font-size="30" fill="#8A8580">276px</text><rect x="186" y="1052" width="88" height="76" rx="18" fill="#F1EEE8"/><text x="230" y="1100" text-anchor="middle" font-size="26" font-weight="400" fill="#2B2A28">25%</text><rect x="284" y="1052" width="88" height="76" rx="18" fill="#EFEAFE"/><text x="328" y="1100" text-anchor="middle" font-size="26" font-weight="700" fill="#7A5AF8">50%</text><rect x="382" y="1052" width="88" height="76" rx="18" fill="#F1EEE8"/><text x="426" y="1100" text-anchor="middle" font-size="26" font-weight="400" fill="#2B2A28">75%</text><rect x="480" y="1052" width="88" height="76" rx="18" fill="#F1EEE8"/><text x="524" y="1100" text-anchor="middle" font-size="26" font-weight="400" fill="#2B2A28">100%</text><rect x="578" y="1052" width="136" height="76" rx="18" fill="#F1EEE8"/><text x="646" y="1100" text-anchor="middle" font-size="26" font-weight="400" fill="#2B2A28">Original</text><rect x="174" y="1240" width="460" height="14" rx="7" fill="#DFD9CE"/><rect x="174" y="1274" width="380" height="14" rx="7" fill="#E7E2D9"/><rect x="174" y="1340" width="552" height="84" rx="16" fill="#F7F3E8"/><text x="202" y="1394" font-size="30" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#2B2A28">![[photo.png|276]]</text></g>
+</svg>
