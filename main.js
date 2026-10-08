@@ -1,6 +1,6 @@
 "use strict";
 
-const { Plugin, Notice, Menu, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
+const { Plugin, PluginSettingTab, Setting, Notice, Menu, Platform, setIcon, setTooltip, FileSystemAdapter } = require("obsidian");
 
 const MARK = "imageCopyRevealAdded";
 // Set on toolbars that got the mobile "more" button; styles.css hides the
@@ -19,6 +19,7 @@ const STRINGS = {
     copy: "Copy image",
     reveal: REVEAL_LABEL.en,
     rename: "Rename after this note",
+    compress: "Convert to WebP",
     edit: "Edit link",
     resize: "Resize",
     delete: "Delete image",
@@ -29,6 +30,7 @@ const STRINGS = {
     renameCommand: "Rename image under cursor after this note",
     resizeCommand: "Resize image under cursor",
     deleteCommand: "Delete image under cursor",
+    compressCommand: "Convert image under cursor to WebP",
 
     copied: "Image copied",
     copyFailed: "Could not copy the image",
@@ -48,11 +50,24 @@ const STRINGS = {
     keptInUse: (n) => `Image removed. The file is used in ${n} more place${n === 1 ? "" : "s"}, so it was kept`,
     keptCancelled: "Image removed, file kept",
     deleteFailed: "Image removed, but its file could not be deleted",
+
+    unsupported: "Only PNG, JPEG and BMP can be converted",
+    alreadyWebp: "Already a WebP, not compressing it again",
+    working: "Converting…",
+    undecodable: "Could not read this image. Its contents may not match its extension",
+    alreadySmall: "WebP would not be smaller, left untouched",
+    compressed: (pct, from, to) => `Compressed ${pct}% (${from} → ${to}). Original moved to the trash.`,
+    compressedKept: (pct, path) => `Compressed ${pct}%. The original could not be moved to the trash and is kept at ${path}`,
+    compressFailed: "Could not convert the image. Nothing was changed",
+    rolledBackFailed: "Converting failed and could not be fully undone. The original is kept at",
+    qualityName: "WebP quality",
+    qualityDesc: "Higher keeps more detail and produces bigger files. 90 is a good starting point for screenshots.",
   },
   zh: {
     copy: "复制图片",
     reveal: REVEAL_LABEL.zh,
     rename: "重命名为笔记名",
+    compress: "转为 WebP",
     edit: "编辑链接",
     resize: "调整大小",
     delete: "删除图片",
@@ -63,6 +78,7 @@ const STRINGS = {
     renameCommand: "把鼠标下的图片重命名为笔记名",
     resizeCommand: "调整鼠标下图片的大小",
     deleteCommand: "删除鼠标下的图片",
+    compressCommand: "把鼠标下的图片转为 WebP",
 
     copied: "已复制图片",
     copyFailed: "复制图片失败",
@@ -82,6 +98,18 @@ const STRINGS = {
     keptInUse: (n) => `已删除图片；还有 ${n} 处在用这个文件，文件保留`,
     keptCancelled: "已删除图片，图片文件保留",
     deleteFailed: "已删除图片，但图片文件没能删掉",
+
+    unsupported: "只支持 PNG、JPEG、BMP 转 WebP",
+    alreadyWebp: "已经是 WebP，不重复有损压缩",
+    working: "正在压缩…",
+    undecodable: "读不出这张图片，文件内容可能和扩展名不符",
+    alreadySmall: "转成 WebP 反而更大，未做改动",
+    compressed: (pct, from, to) => `已压缩 ${pct}%（${from} → ${to}），原图已移到废纸篓`,
+    compressedKept: (pct, path) => `已压缩 ${pct}%。原图没能移到废纸篓，保留在 ${path}`,
+    compressFailed: "压缩失败，没有做任何改动",
+    rolledBackFailed: "压缩失败，且没能完全恢复。原图保留在",
+    qualityName: "WebP 质量",
+    qualityDesc: "越高越清晰，文件也越大。截图建议 90。",
   },
 };
 
@@ -346,7 +374,7 @@ async function renderToPng(app, embedEl) {
   else if (img) source = img; // Outside the vault: may be refused, and is reported if so.
   else return null;
 
-  const canvas = document.createElement("canvas");
+  const canvas = createEl("canvas");
   canvas.width = source.naturalWidth || source.width;
   canvas.height = source.naturalHeight || source.height;
   canvas.getContext("2d").drawImage(source, 0, 0);
@@ -502,6 +530,204 @@ async function deleteImage(app, embedEl) {
   }
 }
 
+/* ── WebP conversion (desktop) ───────────────────────────────────────── */
+
+const WEBP_SOURCES = ["png", "jpg", "jpeg", "bmp"];
+
+// Below this, a rewrite costs more than it saves.
+const MIN_SAVING_BYTES = 1024;
+const MIN_SAVING_RATIO = 0.01;
+
+// How long the vault gets to confirm a rename, and the notes to follow it.
+const CONFIRM_MS = 8000;
+
+function formatSize(bytes) {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+/** Re-encode through the WebP encoder Chromium already ships with. Throws when the bytes will not decode. */
+async function encodeWebp(source, quality) {
+  const bitmap = await createImageBitmap(new Blob([source]));
+  const canvas = createEl("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  canvas.getContext("2d").drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", quality / 100));
+  // Without a WebP encoder the browser quietly hands back a PNG instead.
+  if (!blob || blob.type !== "image/webp") return null;
+  return blob.arrayBuffer();
+}
+
+/** Wait until `check` holds, giving up at the deadline. */
+async function until(check, ms = CONFIRM_MS) {
+  const deadline = Date.now() + ms;
+  for (;;) {
+    if (await check()) return true;
+    if (Date.now() >= deadline) return false;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
+/** Remove a backup folder, and the folder holding backups once it is empty. */
+async function discardBackup(adapter, backupDir) {
+  await adapter.rmdir(backupDir, true);
+  const root = backupDir.slice(0, backupDir.lastIndexOf("/"));
+  const rest = await adapter.list(root);
+  // Checked empty just above; rmdir without recursion fails on any folder (EISDIR).
+  if (!rest.files.length && !rest.folders.length) await adapter.rmdir(root, true);
+}
+
+/** A note's text as it stands: the open editor's, when it is open. */
+async function currentText(app, file) {
+  const leaf = app.workspace.getLeavesOfType("markdown").find((l) => l.view?.file === file);
+  return leaf?.view.editor?.getValue() ?? app.vault.read(file);
+}
+
+/** How strongly a note or canvas points at `file`: links for a note, presence for a canvas. */
+async function pointing(app, path, file) {
+  const source = app.vault.getFileByPath(path);
+  if (!source) return 0;
+  const text = await currentText(app, source);
+  if (source.extension === "canvas") return text.includes(file.path) ? 1 : 0;
+  return countLinksIn(app, text, file, path);
+}
+
+/**
+ * Convert in place and move the original to the system trash.
+ *
+ * Nothing new appears in the vault on the way: the image is overwritten and
+ * renamed rather than recreated, and the original waits in the plugin's own
+ * folder, which the vault does not index. Another plugin that renames new
+ * attachments as they arrive therefore never sees anything to act on. The
+ * original is only let go once the vault confirms the new name and every
+ * note that pointed at the image points at it again; any failure before that
+ * puts the old name and bytes back.
+ */
+async function compressImage(plugin, embedEl) {
+  const { app } = plugin;
+  const file = resolveFile(app, embedEl);
+  if (!file) {
+    new Notice(t("notInVault"));
+    return;
+  }
+  const extension = file.extension.toLowerCase();
+  if (extension === "webp") {
+    // Re-encoding an already lossy file only throws away more detail.
+    new Notice(t("alreadyWebp"));
+    return;
+  }
+  if (!WEBP_SOURCES.includes(extension)) {
+    new Notice(t("unsupported"));
+    return;
+  }
+  if (plugin.converting.has(file)) return;
+  plugin.converting.add(file);
+  const notice = new Notice(t("working"), 0);
+  try {
+    await convertFile(plugin, file);
+  } finally {
+    notice.hide();
+    plugin.converting.delete(file);
+  }
+}
+
+async function convertFile(plugin, file) {
+  const { app } = plugin;
+  const adapter = app.vault.adapter;
+  const source = await app.vault.readBinary(file);
+
+  let webp;
+  try {
+    webp = await encodeWebp(source, plugin.settings.quality);
+  } catch (error) {
+    console.error("Image Copy and Reveal: decoding failed", error);
+    new Notice(t("undecodable"));
+    return;
+  }
+  if (!webp) {
+    new Notice(t("compressFailed"));
+    return;
+  }
+  const saved = source.byteLength - webp.byteLength;
+  if (saved < MIN_SAVING_BYTES || saved / source.byteLength < MIN_SAVING_RATIO) {
+    new Notice(t("alreadySmall"));
+    return;
+  }
+
+  const dir = file.parent?.path ?? "";
+  let target = joinPath(dir, `${file.basename}.webp`);
+  for (let suffix = 1; app.vault.getAbstractFileByPath(target); suffix += 1) {
+    target = joinPath(dir, `${file.basename}-${suffix}.webp`);
+  }
+
+  // Unsaved edits are written out first, so the link update below works on
+  // what is on screen instead of racing an editor buffer.
+  for (const leaf of app.workspace.getLeavesOfType("markdown")) await leaf.view.save?.();
+
+  // What has to point at the image afterwards, measured before anything moves.
+  const expected = new Map();
+  const resolved = app.metadataCache.resolvedLinks;
+  for (const path in resolved) {
+    if (resolved[path][file.path]) expected.set(path, await pointing(app, path, file));
+  }
+
+  const originalPath = file.path;
+  const backupDir = `${plugin.manifest.dir}/originals/${Date.now()}`;
+  const backupPath = `${backupDir}/${file.name}`;
+  try {
+    await adapter.mkdir(backupDir);
+    await adapter.writeBinary(backupPath, source);
+    if ((await adapter.stat(backupPath))?.size !== source.byteLength) throw new Error("backup incomplete");
+  } catch (error) {
+    console.error("Image Copy and Reveal: could not back up the original", error);
+    await discardBackup(adapter, backupDir).catch(() => {});
+    new Notice(t("compressFailed"));
+    return;
+  }
+
+  let modified = false;
+  try {
+    await app.vault.modifyBinary(file, webp);
+    modified = true;
+    await app.fileManager.renameFile(file, target);
+    // renameFile returns before the vault index has caught up; ask the index.
+    if (!(await until(() => app.vault.getAbstractFileByPath(target) === file))) throw new Error("rename not confirmed");
+    for (const [path, count] of expected) {
+      if (!(await until(async () => (await pointing(app, path, file)) >= count))) {
+        throw new Error(`links in ${path} did not follow the rename`);
+      }
+    }
+  } catch (error) {
+    console.error("Image Copy and Reveal: conversion failed, undoing", error);
+    try {
+      // In reverse: the name first, so the links follow it back, then the bytes.
+      if (file.path !== originalPath) {
+        await app.fileManager.renameFile(file, originalPath);
+        if (!(await until(() => app.vault.getAbstractFileByPath(originalPath) === file))) throw new Error("rename back not confirmed");
+      }
+      if (modified) await app.vault.modifyBinary(file, source);
+      await discardBackup(adapter, backupDir);
+      new Notice(t("compressFailed"));
+    } catch (undoError) {
+      console.error("Image Copy and Reveal: undoing failed; the original is kept", undoError);
+      new Notice(`${t("rolledBackFailed")} ${backupPath}`, 0);
+    }
+    return;
+  }
+
+  const percent = Math.round((saved / source.byteLength) * 100);
+  // The original goes to the system trash under its own name.
+  const trashed = await adapter.trashSystem(backupPath).catch(() => false);
+  if (!trashed) {
+    new Notice(t("compressedKept")(percent, backupPath), 0);
+    return;
+  }
+  await discardBackup(adapter, backupDir).catch(() => {});
+  new Notice(t("compressed")(percent, formatSize(source.byteLength), formatSize(webp.byteLength)));
+}
+
 /* ── resize panel (mobile, where Obsidian draws no resize handle) ─────── */
 
 const MIN_WIDTH = 20; // Obsidian's own handle stops here too.
@@ -636,6 +862,9 @@ const ACTIONS = [
   { id: "rename-image-under-cursor", icon: "text-cursor-input", label: "rename", command: "renameCommand",
     button: true, menu: true,
     run: (plugin, el) => renameAfterNote(plugin.app, el) },
+  { id: "compress-image-under-cursor", icon: "file-archive", label: "compress", command: "compressCommand",
+    button: true, electron: true,
+    run: (plugin, el) => compressImage(plugin, el) },
   { id: "reveal-image-under-cursor", icon: "folder-open", label: "reveal", command: "revealCommand",
     button: true, electron: true,
     run: (plugin, el) => revealImage(plugin.app, el) },
@@ -647,9 +876,39 @@ const ACTIONS = [
     run: (plugin, el) => deleteImage(plugin.app, el) },
 ];
 
+const DEFAULT_SETTINGS = { quality: 90 };
+
+class ImageCopyRevealSettingTab extends PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display() {
+    this.containerEl.empty();
+    new Setting(this.containerEl)
+      .setName(t("qualityName"))
+      .setDesc(t("qualityDesc"))
+      .addSlider((slider) =>
+        slider
+          .setLimits(50, 100, 1)
+          .setValue(this.plugin.settings.quality)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.quality = value;
+            await this.plugin.saveData(this.plugin.settings);
+          })
+      );
+  }
+}
+
 module.exports = class ImageCopyRevealPlugin extends Plugin {
   async onload() {
     this.panel = null;
+    this.converting = new Set();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    // Converting is desktop only, and quality is its only setting.
+    if (Platform.isDesktopApp) this.addSettingTab(new ImageCopyRevealSettingTab(this.app, this));
     this.register(() => this.panel?.close());
     // Toolbars outlive the plugin, so take back everything added to them;
     // otherwise a reload leaves buttons wired to the old code behind.

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif">
+  <defs>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#2B2A28" flood-opacity="0.10"/></filter>
+    <filter id="lift" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#2B2A28" flood-opacity="0.14"/></filter>
+    <marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#7A5AF8"/></marker>
+    <marker id="tipg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#B5AEA3"/></marker>
+    <g id="ic-zoom"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4M11 8v6M8 11h6"/></g>
+    <g id="ic-pencil"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></g>
+    <g id="ic-copy"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></g>
+    <g id="ic-folder"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.2 10H20a2 2 0 0 1 1.9 2.5l-1.5 6a2 2 0 0 1-2 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.7.9l.8 1.2a2 2 0 0 0 1.7.9H18a2 2 0 0 1 2 2v2"/></g>
+    <g id="ic-rename"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1"/><path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5"/><path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1"/><path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7"/><path d="M9 7v10"/></g>
+    <g id="ic-archive"><path d="M10 12v-1"/><path d="M10 18v-2"/><path d="M10 7V6"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v16a2 2 0 0 0 .27 1"/><circle cx="10" cy="20" r="2"/></g>
+    <g id="ic-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6M14 11v6"/></g>
+    <g id="ic-code"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></g>
+    <g id="ic-scaling"><path d="M21 3 9 15"/><path d="M12 3H3v18h18v-9"/><path d="M16 3h5v5"/><path d="M14 15H9v-5"/></g>
+    <g id="scene" stroke="#20201D" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="70" cy="47" r="17" fill="#D9C6FB"/>
+      <path d="M70 24v-9M86 31l6-6M93 47h9M86 63l6 6M70 70v9M54 63l-6 6M47 47h-9M54 31l-6-6"/>
+      <path d="M168 53c-6 0-9-4-7-8 1-4 6-6 9-5 1-8 9-12 15-9 3-8 15-9 19-2 7-3 14 2 13 8 5 1 7 5 5 9-2 5-8 7-12 7z"/>
+      <path d="M45 181c-9-2-14-10-11-17-6-6-3-16 5-18 0-9 9-14 16-10 5-7 16-6 19 2 9-1 15 8 11 15 6 5 4 15-4 17-2 7-11 10-17 6-5 6-14 6-19-1z"/>
+      <path d="M56 179c1 18 1 36 0 54M63 181c-1 16-1 34 0 52"/>
+      <path d="M6 240c54-8 124-30 194-37 100-4 180 21 270 41 60 13 90 24 124 33"/>
+    </g>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F4"/>
+  <text x="60" y="84" font-size="40" font-weight="700" fill="#2B2A28">Buttons in the image toolbar you already have</text>
+  <text x="60" y="124" font-size="20" fill="#8A8580">Desktop: hover any embedded image. No extra toolbar, no right-click menu.</text>
+  <clipPath id="c1"><rect x="60" y="170" width="700" height="420" rx="10"/></clipPath>
+  <rect x="60" y="170" width="700" height="420" rx="10" fill="#F7F3E8" stroke="#E0D7C2" stroke-width="1.5" filter="url(#soft)"/>
+  <g clip-path="url(#c1)"><use href="#scene" transform="translate(60,310.0) scale(1.0000)"/></g>
+  <g transform="translate(448,186)">
+    <rect width="296" height="44" rx="10" fill="#FFFFFF" fill-opacity="0.95" stroke="#E6E0D6" filter="url(#soft)"/>
+    <rect x="82" y="6" width="208" height="32" rx="8" fill="#EFEAFE"/>
+    <g stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-zoom" stroke="#8A8580" transform="translate(10,10) scale(1)"/><use href="#ic-pencil" stroke="#8A8580" transform="translate(50,10) scale(1)"/><use href="#ic-rename" stroke="#7A5AF8" transform="translate(90,10) scale(1)"/><use href="#ic-archive" stroke="#7A5AF8" transform="translate(130,10) scale(1)"/><use href="#ic-folder" stroke="#7A5AF8" transform="translate(170,10) scale(1)"/><use href="#ic-copy" stroke="#7A5AF8" transform="translate(210,10) scale(1)"/><use href="#ic-trash" stroke="#7A5AF8" transform="translate(250,10) scale(1)"/></g>
+  </g>
+  <g transform="translate(150,640)">
+    <rect width="520" height="96" rx="22" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="1.5" filter="url(#lift)"/>
+    <rect x="148" y="12" width="360" height="72" rx="16" fill="#EFEAFE"/>
+    <g stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-zoom" stroke="#8A8580" transform="translate(22,24) scale(2)"/><use href="#ic-pencil" stroke="#8A8580" transform="translate(94,24) scale(2)"/><use href="#ic-rename" stroke="#7A5AF8" transform="translate(166,24) scale(2)"/><use href="#ic-archive" stroke="#7A5AF8" transform="translate(238,24) scale(2)"/><use href="#ic-folder" stroke="#7A5AF8" transform="translate(310,24) scale(2)"/><use href="#ic-copy" stroke="#7A5AF8" transform="translate(382,24) scale(2)"/><use href="#ic-trash" stroke="#7A5AF8" transform="translate(454,24) scale(2)"/></g>
+  </g>
+  <text x="222" y="768" text-anchor="middle" font-size="16" fill="#9A948B">Obsidian's own</text>
+  <text x="478" y="768" text-anchor="middle" font-size="16" font-weight="600" fill="#7A5AF8">added by this plugin</text>
+  <g transform="translate(796,200)"><rect width="54" height="54" rx="14" fill="#EFEAFE"/><g stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-rename" stroke="#7A5AF8" transform="translate(15,15) scale(1)"/></g></g>
+  <text x="868" y="224" font-size="21" font-weight="600" fill="#2B2A28">Rename after the note</text>
+  <text x="868" y="250" font-size="16" fill="#8A8580">Pasted image 2026… → Note-1.png</text>
+  <g transform="translate(796,296)"><rect width="54" height="54" rx="14" fill="#EFEAFE"/><g stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-archive" stroke="#7A5AF8" transform="translate(15,15) scale(1)"/></g></g>
+  <text x="868" y="320" font-size="21" font-weight="600" fill="#2B2A28">Convert to WebP</text>
+  <text x="868" y="346" font-size="16" fill="#8A8580">PNG / JPG screenshots, 80–90% smaller</text>
+  <g transform="translate(796,392)"><rect width="54" height="54" rx="14" fill="#EFEAFE"/><g stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-folder" stroke="#7A5AF8" transform="translate(15,15) scale(1)"/></g></g>
+  <text x="868" y="416" font-size="21" font-weight="600" fill="#2B2A28">Show in Finder / Explorer</text>
+  <text x="868" y="442" font-size="16" fill="#8A8580">the file, selected in its folder</text>
+  <g transform="translate(796,488)"><rect width="54" height="54" rx="14" fill="#EFEAFE"/><g stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-copy" stroke="#7A5AF8" transform="translate(15,15) scale(1)"/></g></g>
+  <text x="868" y="512" font-size="21" font-weight="600" fill="#2B2A28">Copy image</text>
+  <text x="868" y="538" font-size="16" fill="#8A8580">paste into chat, email, design apps</text>
+  <g transform="translate(796,584)"><rect width="54" height="54" rx="14" fill="#EFEAFE"/><g stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-trash" stroke="#7A5AF8" transform="translate(15,15) scale(1)"/></g></g>
+  <text x="868" y="608" font-size="21" font-weight="600" fill="#2B2A28">Delete image</text>
+  <text x="868" y="634" font-size="16" fill="#8A8580">and its file, if nothing else uses it</text>
+  <text x="796" y="700" font-size="16" fill="#9A948B">Every action is also a command,</text>
+  <text x="796" y="722" font-size="16" fill="#9A948B">so it can take a hotkey.</text>
+
+</svg>

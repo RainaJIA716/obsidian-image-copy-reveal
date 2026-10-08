@@ -1,9 +1,9 @@
 {
   "id": "image-copy-reveal",
   "name": "Image Copy and Reveal",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "minAppVersion": "1.13.0",
-  "description": "Resize, rename or delete an image from the built-in image toolbar, on mobile too, and on desktop reveal it in Finder or Explorer or copy it to the clipboard.",
+  "description": "Image toolbar, mobile/iPhone too: resize images, delete them with unused attachment files, convert/compress PNG/JPG screenshots to WebP, rename after note, show in Finder/Explorer, copy to clipboard.",
   "author": "RainaJIA716",
   "authorUrl": "https://github.com/RainaJIA716",
   "isDesktopOnly": false

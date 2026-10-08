@@ -24,6 +24,7 @@
     <g id="ic-code"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></g>
     <g id="ic-scaling"><path d="M21 3 9 15"/><path d="M12 3H3v18h18v-9"/><path d="M16 3h5v5"/><path d="M14 15H9v-5"/></g>
     <clipPath id="phoneClip"><rect x="890" y="44" width="290" height="560" rx="36"/></clipPath>
+    <g id="ic-archive"><path d="M10 12v-1"/><path d="M10 18v-2"/><path d="M10 7V6"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v16a2 2 0 0 0 .27 1"/><circle cx="10" cy="20" r="2"/></g>
     <g id="ic-rename"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1"/><path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5"/><path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1"/><path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7"/><path d="M9 7v10"/></g>
   </defs>
 
@@ -65,51 +66,52 @@
   <rect x="56" y="100" width="600" height="286" rx="10" fill="none" stroke="#E0D7C2" stroke-width="1.5"/>
 
   <!-- toolbar, actual size, sitting in the image's top-right corner -->
-  <g transform="translate(390,116)">
-    <rect x="0" y="0" width="256" height="44" rx="10" fill="#FFFFFF" fill-opacity="0.94" stroke="#E6E0D6" filter="url(#soft)"/>
-    <rect x="82" y="6" width="168" height="32" rx="8" fill="#EFEAFE"/>
+  <g transform="translate(350,116)">
+    <rect x="0" y="0" width="296" height="44" rx="10" fill="#FFFFFF" fill-opacity="0.94" stroke="#E6E0D6" filter="url(#soft)"/>
+    <rect x="82" y="6" width="208" height="32" rx="8" fill="#EFEAFE"/>
     <g stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <g stroke="#8A8580"><use href="#ic-zoom" x="10" y="10"/><use href="#ic-pencil" x="50" y="10"/></g>
       <g stroke="#7A5AF8">
-        <use href="#ic-rename" x="90" y="10"/>
-        <use href="#ic-folder" x="130" y="10"/><use href="#ic-copy" x="170" y="10"/>
-        <use href="#ic-trash" x="210" y="10"/>
+        <use href="#ic-rename" x="90" y="10"/><use href="#ic-archive" x="130" y="10"/>
+        <use href="#ic-folder" x="170" y="10"/><use href="#ic-copy" x="210" y="10"/>
+        <use href="#ic-trash" x="250" y="10"/>
       </g>
     </g>
   </g>
 
   <path d="M700 176 C 684 176, 672 152, 652 140" stroke="#7A5AF8" stroke-width="2" fill="none" marker-end="url(#tip)"/>
-  <text x="698" y="182" font-size="16" font-weight="600" fill="#7A5AF8">four new buttons</text>
+  <text x="698" y="182" font-size="16" font-weight="600" fill="#7A5AF8">five new buttons</text>
   <text x="698" y="206" font-size="14" fill="#8A8580">in the toolbar that</text>
   <text x="698" y="225" font-size="14" fill="#8A8580">Obsidian already</text>
   <text x="698" y="244" font-size="14" fill="#8A8580">draws for you</text>
 
   <!-- the same toolbar, magnified -->
-  <g transform="translate(160,462)">
-    <rect x="0" y="0" width="488" height="88" rx="20" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="1.5" filter="url(#lift)"/>
-    <rect x="164" y="12" width="312" height="64" rx="14" fill="#EFEAFE"/>
+  <g transform="translate(120,462)">
+    <rect x="0" y="0" width="568" height="88" rx="20" fill="#FFFFFF" stroke="#E6E0D6" stroke-width="1.5" filter="url(#lift)"/>
+    <rect x="164" y="12" width="392" height="64" rx="14" fill="#EFEAFE"/>
     <g stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <g stroke="#8A8580">
         <use href="#ic-zoom"   transform="translate(20,20) scale(2)"/>
         <use href="#ic-pencil" transform="translate(100,20) scale(2)"/>
       </g>
       <g stroke="#7A5AF8">
-        <use href="#ic-rename" transform="translate(180,20) scale(2)"/>
-        <use href="#ic-folder" transform="translate(260,20) scale(2)"/>
-        <use href="#ic-copy"   transform="translate(340,20) scale(2)"/>
-        <use href="#ic-trash"  transform="translate(420,20) scale(2)"/>
+        <use href="#ic-rename"  transform="translate(180,20) scale(2)"/>
+        <use href="#ic-archive" transform="translate(260,20) scale(2)"/>
+        <use href="#ic-folder"  transform="translate(340,20) scale(2)"/>
+        <use href="#ic-copy"    transform="translate(420,20) scale(2)"/>
+        <use href="#ic-trash"   transform="translate(500,20) scale(2)"/>
       </g>
     </g>
   </g>
 
-  <path d="M180 452 v-14 h128 v14" stroke="#C9C2B6" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <text x="244" y="428" text-anchor="middle" font-size="14" fill="#9A948B">built into Obsidian</text>
+  <path d="M140 452 v-14 h128 v14" stroke="#C9C2B6" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="204" y="428" text-anchor="middle" font-size="14" fill="#9A948B">built into Obsidian</text>
 
-  <path d="M340 452 v-14 h288 v14" stroke="#7A5AF8" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M300 452 v-14 h368 v14" stroke="#7A5AF8" stroke-width="2" fill="none" stroke-linecap="round"/>
   <text x="484" y="428" text-anchor="middle" font-size="14" font-weight="600" fill="#7A5AF8">this plugin</text>
 
-  <text x="244" y="576" text-anchor="middle" font-size="14" fill="#9A948B">zoom · edit</text>
-  <text x="484" y="576" text-anchor="middle" font-size="14" font-weight="600" fill="#2B2A28">rename · reveal in Finder · copy · delete</text>
+  <text x="204" y="576" text-anchor="middle" font-size="14" fill="#9A948B">zoom · edit</text>
+  <text x="484" y="576" text-anchor="middle" font-size="14" font-weight="600" fill="#2B2A28">rename · to WebP · reveal in Finder · copy · delete</text>
 
   <!-- mobile: the same toolbar shrinks to one button, and everything, Obsidian's
        own edit button included, moves into the menu it opens -->
